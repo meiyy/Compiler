@@ -26,7 +26,7 @@ public:
 		}
 	}
 };
-class Worker
+class Parser
 {
 private:
 	Reader &rd;
@@ -46,11 +46,11 @@ private:
 		return ck.hset.find(str) != ck.hset.end();
 	}
 public:
-	Worker(Reader *reader) :rd(*reader)
+	Parser(Reader *reader) :rd(*reader)
 	{
 	}
 	
-	void work()
+	void test()
 	{
 		Conshow con;
 		while (rd.cur() != EOF)
@@ -422,7 +422,7 @@ public:
 		return rd.pop();
 	}
 
-	~Worker()
+	~Parser()
 	{
 	}
 };
