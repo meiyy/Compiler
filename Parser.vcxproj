@@ -149,6 +149,9 @@
   <ItemGroup>
     <ResourceCompile Include="Parser.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="document.md" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
