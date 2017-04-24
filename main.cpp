@@ -1,6 +1,6 @@
 #include"DFA.h"
 #include"Reader.h"
-#include"Worker.h"
+#include"Parser.h"
 #include"conshow.h"
 
 using namespace std;
