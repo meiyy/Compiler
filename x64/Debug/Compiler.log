@@ -1,0 +1,4 @@
+﻿  main.cpp
+f:\file\course\compile principle\compiler\reader.h(38): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+  Compiler.vcxproj -> F:\FILE\course\Compile Principle\Compiler\x64\Debug\Compiler.exe
+  Compiler.vcxproj -> F:\FILE\course\Compile Principle\Compiler\x64\Debug\Compiler.pdb (Partial PDB)

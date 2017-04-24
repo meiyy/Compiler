@@ -20,34 +20,27 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Reader.h">
+    <ClInclude Include="dfa.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Worker.h">
+    <ClInclude Include="reader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="word.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="parser.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="conshow.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Word.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="DFA.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Compiler.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="document.md" />
-    <None Include="hello" />
     <None Include="LICENSE" />
     <None Include=".gitignore" />
+    <None Include="README.md" />
+    <None Include="HELLO" />
+    <None Include="DOCUMENT.md" />
   </ItemGroup>
 </Project>
