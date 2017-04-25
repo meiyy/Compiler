@@ -38,7 +38,7 @@ public:
 		int readSz = fread(buf, 1, sz, file);
 		if (readSz != sz)
 		{
-			string res = string("Error reading file: \"") + path + "\".";
+			string res = string("Error in reading file: \"") + path + "\".";
 			throw exception(res.c_str());
 		}
 		if(file != nullptr)
