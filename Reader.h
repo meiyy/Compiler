@@ -53,7 +53,7 @@ public:
 		if (pos < sz)
 			pos++;
 		else
-			throw Endoffile("Reach end of file.");
+			throw Endoffile("Reach the end of input file.");
 	}
 
 	char cur()
