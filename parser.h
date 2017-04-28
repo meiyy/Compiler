@@ -10,20 +10,22 @@ using namespace std;
 
 class KeyWordChecker
 {
-	const char* str[20] = {
-		"int","double","char","struct","static",
-		"switch","case","default","break","const",
-		"return","void","continue","do","while",
-		"if","else","for","sizeof","goto"
+	const char* str[9] = {
+		"if","else","while","int","double",
+		"break","continue","const","return"
 	};
 public:
-	unordered_set<string> hset;
+	int Check(string c)
+	{
+		for (int i = 0; i < 9; i++)
+		{
+			if (c == string(str[i]))
+				return i;
+		}
+		return Identifier;
+	}
 	KeyWordChecker()
 	{
-		for (int i = 0; i < 20; i++)
-		{
-			hset.insert(string(str[i]));
-		}
 	}
 };
 class Parser
@@ -41,10 +43,6 @@ private:
 	bool isFID(char c) { return c == '_' || isAlpha(c); }
 	bool isID(char c) { return isFID(c) || isDigit(c); }
 	bool isBlank(char c) { return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }
-	bool isKeyword(string str)
-	{
-		return ck.hset.find(str) != ck.hset.end();
-	}
 public:
 	Parser(Reader *reader) :rd(*reader)
 	{
@@ -66,7 +64,8 @@ public:
 			}
 			Word word = getWord();
 			string tmp = "<< " + string(TypeName[word.type]) + "\t:" + word.raw + " >>";
-			con.show(tmp.c_str());
+			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
+			//con.show(tmp.c_str());
 		}
 	}
 	
@@ -87,7 +86,7 @@ public:
 			}
 			rd.next();
 			res = rd.pop();
-			type = Ccharacter;
+			type = CCharacter;
 		}
 		else if (rd.cur() == '\"')
 		{
@@ -102,7 +101,7 @@ public:
 			}
 			rd.next();
 			res = rd.pop();
-			type = Cstring;
+			type = CString;
 		}
 		else if (rd.cur() == '#')
 		{
@@ -121,14 +120,7 @@ public:
 		else if (isFID(rd.cur()))
 		{
 			res = getID();
-			if (isKeyword(res))
-			{
-				type = Keyword;
-			}
-			else
-			{
-				type = Identification;
-			}
+			type = (WordType)ck.Check(res);
 		}
 		else if (rd.cur() == '0')
 		{
@@ -143,12 +135,12 @@ public:
 				}
 				rd.next();
 				res = getHex();
-				type = CintHex;
+				type = CIntHex;
 			}
 			else
 			{
 				res = getOct();
-				type = CintOct;
+				type = CIntOct;
 			}
 		}
 		else if (isNDigit(rd.cur()))
@@ -162,18 +154,18 @@ public:
 			{
 				rd.next();
 				res = get8();
-				type = Cfloat;
+				type = CFloat;
 			}
 			else if (rd.cur() == 'e' || rd.cur() == 'E')
 			{
 				rd.next();
 				res = get9();
-				type = Cfloat;
+				type = CFloat;
 			}
 			else
 			{
 				res = rd.pop();
-				type = CintDec;
+				type = CIntDec;
 			}
 		}
 		else if (rd.cur() == '.')
@@ -183,29 +175,36 @@ public:
 			{
 				rd.next();
 				res = get8();
-				type = Cfloat;
+				type = CFloat;
 			}
 			else
 			{
 				res = rd.pop();
-				type = Operator;
+				type = OPoint;
 			}
 		}
 		else
 		{
-			res = getOpt();
-			type = Operator;
+			res = getOpt(type);
 		}
 		return Word(res, type);
 	}
 
-	string getOpt()
+	string getOpt(WordType &type)
 	{
 		if (rd.cur() == '+')
 		{
 			rd.next();
-			if (rd.cur() == '=' || rd.cur() == '+')
+			type = OPlus;
+			if (rd.cur() == '=')
 			{
+				type = OPlusEqu;
+				rd.next();
+			}
+			else if (rd.cur() == '+')
+			{
+
+				type = OPlusPlus;
 				rd.next();
 			}
 			return rd.pop();
@@ -213,8 +212,16 @@ public:
 		else if (rd.cur() == '-')
 		{
 			rd.next();
-			if (rd.cur() == '=' || rd.cur() == '-')
+			type = OMinus;
+			if (rd.cur() == '=')
 			{
+				type = OMinusEqu;
+				rd.next();
+			}
+			else if (rd.cur() == '-')
+			{
+
+				type = OMinusMinus;
 				rd.next();
 			}
 			return rd.pop();
@@ -222,8 +229,15 @@ public:
 		else if (rd.cur() == '&')
 		{
 			rd.next();
-			if (rd.cur() == '=' || rd.cur() == '&')
+			type = OAnd;
+			if (rd.cur() == '=')
 			{
+				type = OAndEqu;
+				rd.next();
+			}
+			else if (rd.cur() == '&')
+			{
+				type = OAndAnd;
 				rd.next();
 			}
 			return rd.pop();
@@ -231,8 +245,15 @@ public:
 		else if (rd.cur() == '|')
 		{
 			rd.next();
-			if (rd.cur() == '=' || rd.cur() == '|')
+			type = OOr;
+			if (rd.cur() == '=')
 			{
+				type = OOrEqu;
+				rd.next();
+			}
+			else if (rd.cur() == '|')
+			{
+				type = OOrOr;
 				rd.next();
 			}
 			return rd.pop();
@@ -240,17 +261,21 @@ public:
 		else if (rd.cur() == '<')
 		{
 			rd.next();
+			type = OLess;
 			if (rd.cur() == '<')
 			{
 				rd.next();
+				type = OLShift;
 				if (rd.cur() == '=')
 				{
+					type = OLShiftEqu;
 					rd.next();
 				}
 				return rd.pop();
 			}
 			if (rd.cur() == '=')
 			{
+				type = OLessEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -258,17 +283,21 @@ public:
 		else if (rd.cur() == '>')
 		{
 			rd.next();
+			type = OMore;
 			if (rd.cur() == '>')
 			{
+				type = ORShift;
 				rd.next();
 				if (rd.cur() == '=')
 				{
+					type = ORShiftEqu;
 					rd.next();
 				}
 				return rd.pop();
 			}
 			if (rd.cur() == '=')
 			{
+				type = OMoreEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -276,8 +305,10 @@ public:
 		else if (rd.cur() == '^')
 		{
 			rd.next();
+			type = OXor;
 			if (rd.cur() == '=')
 			{
+				type = OXorEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -285,8 +316,10 @@ public:
 		else if (rd.cur() == '!')
 		{
 			rd.next();
+			type = ONot;
 			if (rd.cur() == '=')
 			{
+				type = ONotEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -294,8 +327,10 @@ public:
 		else if (rd.cur() == '*')
 		{
 			rd.next();
+			type = OMul;
 			if (rd.cur() == '=')
 			{
+				type = OMulEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -303,8 +338,10 @@ public:
 		else if (rd.cur() == '%')
 		{
 			rd.next();
+			type = OMod;
 			if (rd.cur() == '=')
 			{
+				type = OModEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -312,8 +349,10 @@ public:
 		else if (rd.cur() == '=')
 		{
 			rd.next();
+			type = OEqu;
 			if (rd.cur() == '=')
 			{
+				type = OEquEqu;
 				rd.next();
 			}
 			return rd.pop();
@@ -323,16 +362,47 @@ public:
 			switch (rd.cur())
 			{
 			case '(':
+				type = OLPara;
+				rd.next();
+				return rd.pop();
 			case ')':
+				type = ORPara;
+				rd.next();
+				return rd.pop();
 			case '[':
+				type = OLBrack;
+				rd.next();
+				return rd.pop();
 			case ']':
+				type = ORBrack;
+				rd.next();
+				return rd.pop();
 			case '{':
+				type = OLBrace;
+				rd.next();
+				return rd.pop();
 			case '}':
+				type = ORBrace;
+				rd.next();
+				return rd.pop();
 			case '?':
+				type = OQue;
+				rd.next();
+				return rd.pop();
 			case ':':
+				type = OColon;
+				rd.next();
+				return rd.pop();
 			case ',':
+				type = OComma;
+				rd.next();
+				return rd.pop();
 			case ';':
+				type = OSemi;
+				rd.next();
+				return rd.pop();
 			case '~':
+				type = OTilde;
 				rd.next();
 				return rd.pop();
 			default:
