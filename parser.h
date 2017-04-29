@@ -68,7 +68,32 @@ public:
 			//con.show(tmp.c_str());
 		}
 	}
-	
+	void getEscape()
+	{
+		if (rd.cur() != '\\')
+		{
+			return;
+		}
+		rd.next();
+		if (rd.cur() == '\'' || rd.cur() == '\"' || rd.cur() == '\?' || rd.cur() == '\\' ||
+			rd.cur() == 'a' || rd.cur() == 'b' || rd.cur() == 'f' || rd.cur() == 'n' || rd.cur() == 'r' || rd.cur() == 't' || rd.cur() == 'v')
+		{
+			rd.next();
+			return;
+		}
+		if (rd.cur() == '0')
+		{
+			rd.next();
+			if (rd.cur() == 'x' || rd.cur() == 'X')
+			{
+				rd.next();
+				while (rd.cur())
+				{
+					
+				}
+			}
+		}
+	}
 	Word getWord()
 	{
 		string res;
