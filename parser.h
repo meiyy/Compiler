@@ -75,6 +75,20 @@ public:
 			return;
 		}
 		rd.next();
+		if (rd.cur() == '\r')
+		{
+			rd.next();
+			if (rd.cur() == '\n')
+			{
+				rd.next();
+			}
+			return;
+		}
+		if (rd.cur() == '\n')
+		{
+			rd.next();
+			return;
+		}
 		if (rd.cur() == '\'' || rd.cur() == '\"' || rd.cur() == '\?' || rd.cur() == '\\' ||
 			rd.cur() == 'a' || rd.cur() == 'b' || rd.cur() == 'f' || rd.cur() == 'n' || rd.cur() == 'r' || rd.cur() == 't' || rd.cur() == 'v')
 		{
@@ -84,15 +98,46 @@ public:
 		if (rd.cur() == '0')
 		{
 			rd.next();
+			int val = 0;
 			if (rd.cur() == 'x' || rd.cur() == 'X')
 			{
 				rd.next();
-				while (rd.cur())
+				if (!isHex(rd.cur()))
 				{
-					
+					string tmp = string("Unexpected character: ") + rd.cur() + " .";
+					throw exception(tmp.c_str());
 				}
+				while (isHex(rd.cur()))
+				{
+					val = (rd.cur() > '9' ? (rd.cur() - 'a' + 10) : (rd.cur() - '0')) + val * 16;
+					rd.next();
+					if (val > 255)
+					{
+						string tmp = string("The char value must be less than 255.") + rd.cur() + " .";
+						throw exception(tmp.c_str());
+					}
+				}
+				// Deal with the val...
+				return;
+			}
+			else if (isOct(rd.cur()))
+			{
+				while (isOct(rd.cur()))
+				{
+					val = (rd.cur() - 'a' + 10)  + val * 8;
+					rd.next();
+					if (val > 255)
+					{
+						string tmp = string("The char value must be less than 255.") + rd.cur() + " .";
+						throw exception(tmp.c_str());
+					}
+				}
+				// Deal with the val...
+				return;
 			}
 		}
+		string tmp = string("Unexpected character: ") + rd.cur() + " .";
+		throw exception(tmp.c_str());
 	}
 	Word getWord()
 	{
@@ -105,7 +150,7 @@ public:
 			{
 				if (rd.cur() == '\\')
 				{
-					rd.next();
+					getEscape();
 				}
 				rd.next();
 			}
@@ -118,11 +163,7 @@ public:
 			rd.next();
 			while (rd.cur() != '\"')
 			{
-				if (rd.cur() == '\\')
-				{
-					rd.next();
-				}
-				rd.next();
+				getEscape();
 			}
 			rd.next();
 			res = rd.pop();
