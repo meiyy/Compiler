@@ -53,9 +53,11 @@ public:
 		Conshow con;
 		while (rd.cur() != EOF)
 		{
+			escapeLine();
 			while (isBlank(rd.cur()))
 			{
 				rd.next();
+				escapeLine();
 			}
 			rd.pop();
 			if (rd.cur() == EOF)
@@ -67,6 +69,30 @@ public:
 			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
 			//con.show(tmp.c_str());
 		}
+	}
+	void escapeLine()
+	{
+		if (rd.cur() != '\\')
+		{
+			return;
+		}
+		rd.next();
+		if (rd.cur() == '\r')
+		{
+			rd.next();
+			if (rd.cur() == '\n')
+			{
+				rd.next();
+			}
+			return;
+		}
+		if (rd.cur() == '\n')
+		{
+			rd.next();
+			return;
+		}
+		string tmp = string("Unexpected character: ") + rd.cur() + " .";
+		throw exception(tmp.c_str());
 	}
 	void getEscape()
 	{
@@ -146,13 +172,18 @@ public:
 		if (rd.cur() == '\'')
 		{
 			rd.next();
-			while (rd.cur() != '\'')
+			if (rd.cur() == '\\')
 			{
-				if (rd.cur() == '\\')
-				{
-					getEscape();
-				}
+				getEscape();
+			}
+			else
+			{
 				rd.next();
+			}
+			if (rd.cur() != '\'')
+			{
+				string tmp = string("Too many characters.");
+				throw exception(tmp.c_str());
 			}
 			rd.next();
 			res = rd.pop();
