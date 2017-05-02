@@ -121,32 +121,32 @@ public:
 			rd.next();
 			return;
 		}
-		if (rd.cur() == '0')
+		int val = 0;
+		if (rd.cur() == 'x' || rd.cur() == 'X')
 		{
 			rd.next();
-			int val = 0;
-			if (rd.cur() == 'x' || rd.cur() == 'X')
+			if (!isHex(rd.cur()))
 			{
+				string tmp = string("Unexpected character: ") + rd.cur() + " .";
+				throw exception(tmp.c_str());
+			}
+			while (isHex(rd.cur()))
+			{
+				val = (rd.cur() > '9' ? (rd.cur() - 'a' + 10) : (rd.cur() - '0')) + val * 16;
 				rd.next();
-				if (!isHex(rd.cur()))
+				if (val > 255)
 				{
-					string tmp = string("Unexpected character: ") + rd.cur() + " .";
+					string tmp = string("The char value must be less than 255.") + rd.cur() + " .";
 					throw exception(tmp.c_str());
 				}
-				while (isHex(rd.cur()))
-				{
-					val = (rd.cur() > '9' ? (rd.cur() - 'a' + 10) : (rd.cur() - '0')) + val * 16;
-					rd.next();
-					if (val > 255)
-					{
-						string tmp = string("The char value must be less than 255.") + rd.cur() + " .";
-						throw exception(tmp.c_str());
-					}
-				}
-				// Deal with the val...
-				return;
 			}
-			else if (isOct(rd.cur()))
+			// Deal with the val...
+			return;
+		}
+		if (isOct(rd.cur()))
+		{
+			rd.next();
+			if (isOct(rd.cur()))
 			{
 				while (isOct(rd.cur()))
 				{
