@@ -432,6 +432,17 @@ public:
 			}
 			return rd.pop();
 		}
+		else if (rd.cur() == '/')
+		{
+			rd.next();
+			type = ODiv;
+			if (rd.cur() == '=')
+			{
+				type = ODivEqu;
+				rd.next();
+			}
+			return rd.pop();
+		}
 		else if (rd.cur() == '%')
 		{
 			rd.next();

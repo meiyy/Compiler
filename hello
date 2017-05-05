@@ -7,15 +7,9 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-	Conshow con;
-	if (argc < 2)
-	{
-		con.showVersion();
-		con.showMenu();
-		exit(EXIT_FAILURE);
-	}
-	string a="\a\t\037\0x3f";\
-	delete 0128reader;
-	reader = nullptr;
+	int b=3*6+(2+5)/3;
+	bool c=(b++)>5|| 23/2>9;
+	double d=3.12e-15;
+	string a="\a\t\037\x3f";\
 	return 0;
 }

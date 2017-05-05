@@ -29,10 +29,10 @@
     <ClInclude Include="word.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="parser.h">
+    <ClInclude Include="conshow.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="conshow.h">
+    <ClInclude Include="lexer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

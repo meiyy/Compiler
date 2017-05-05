@@ -31,19 +31,14 @@ public:
 	}
 	void showVersion()
 	{
-		time_t now = time(NULL);
-		tm *now_tm = new tm();
-		localtime_s(now_tm, &now);
-		char now_str[100];
-		sprintf_s(now_str, "Compile time:%d-%02d-%02d %02d:%02d:%02d", now_tm->tm_year + 1900, now_tm->tm_mon + 1, now_tm->tm_mday, now_tm->tm_hour, now_tm->tm_min, now_tm->tm_sec);
 		show("Also Another Compiler 1.0.0");
 		show("BY Zeyu Shen");
-		show(now_str);
+		show("Compile time:" __DATE__ __TIME__);
 	}
 	void showMenu()
 	{
-		cout << "Usage: parser                 Show this help information." << endl;
-		cout << "       parser FILENAME        Process the source file." << endl;
+		cout << "Usage: Compiler.exe                 Show this help information." << endl;
+		cout << "       Compiler.exe FILENAME        Process the source file." << endl;
 	}
 	~Conshow()
 	{

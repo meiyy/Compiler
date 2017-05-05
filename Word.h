@@ -14,6 +14,8 @@ enum WordType
 	KConst,
 	KReturn,
 	Identifier,
+	ODiv,
+	ODivEqu,
 	OTilde,
 	OQue,
 	OComma,
@@ -65,7 +67,7 @@ enum WordType
 	Precompile,
 	Undefined
 };
-const char* TypeName[60]= {
+const char* TypeName[62]= {
 	"KIf",
 	"KElse",
 	"KWhile",
@@ -76,6 +78,8 @@ const char* TypeName[60]= {
 	"KConst",
 	"KReturn",
 	"Identifier",
+	"ODiv",
+	"ODivEqu",
 	"OTilde",
 	"OQue",
 	"OComma",

@@ -144,7 +144,7 @@
     <ClInclude Include="dfa.h" />
     <ClInclude Include="reader.h" />
     <ClInclude Include="word.h" />
-    <ClInclude Include="parser.h" />
+    <ClInclude Include="lexer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
