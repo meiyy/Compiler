@@ -28,7 +28,7 @@ public:
 	{
 	}
 };
-class Parser
+class Lexer
 {
 private:
 	Reader &rd;
@@ -44,7 +44,7 @@ private:
 	bool isID(char c) { return isFID(c) || isDigit(c); }
 	bool isBlank(char c) { return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }
 public:
-	Parser(Reader *reader) :rd(*reader)
+	Lexer(Reader *reader) :rd(*reader)
 	{
 	}
 	
@@ -589,7 +589,7 @@ public:
 		return rd.pop();
 	}
 
-	~Parser()
+	~Lexer()
 	{
 	}
 };

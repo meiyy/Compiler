@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 		con.showError(e.what());
 		exit(EXIT_FAILURE);
 	}
-	Parser parser = Parser(reader);
+	Lexer parser = Lexer(reader);
 	try
 	{
 		parser.test();
