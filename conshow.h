@@ -33,7 +33,7 @@ public:
 	{
 		show("Also Another Compiler 1.0.0");
 		show("BY Zeyu Shen");
-		show("Compile time:" __DATE__ __TIME__);
+		show("Compile time:" __DATE__  "  " __TIME__);
 	}
 	void showMenu()
 	{
