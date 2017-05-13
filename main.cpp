@@ -2,6 +2,7 @@
 #include"reader.h"
 #include"lexer.h"
 #include"conshow.h"
+#include"parser.h"
 
 using namespace std;
 
@@ -24,10 +25,11 @@ int main(int argc, char *argv[])
 		con.showError(e.what());
 		exit(EXIT_FAILURE);
 	}
-	Lexer parser = Lexer(reader);
+	Lexer lexer = Lexer(reader);
 	try
 	{
-		parser.test();
+		Parser parser(lexer);
+		parser.work();
 	}
 	catch (exception &err)
 	{

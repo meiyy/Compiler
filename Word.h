@@ -137,10 +137,14 @@ class Word
 public:
 	string raw;
 	WordType type;
+	Word() {}
 	Word(string raw,WordType type):raw(raw),type(type)
 	{
 	}
-
+	bool isEOF()
+	{
+		return raw == "EOF" && type == Undefined;
+	}
 	~Word()
 	{
 	}

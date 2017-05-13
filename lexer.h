@@ -43,33 +43,7 @@ private:
 	bool isFID(char c) { return c == '_' || isAlpha(c); }
 	bool isID(char c) { return isFID(c) || isDigit(c); }
 	bool isBlank(char c) { return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v'; }
-public:
-	Lexer(Reader *reader) :rd(*reader)
-	{
-	}
-	
-	void test()
-	{
-		Conshow con;
-		while (rd.cur() != EOF)
-		{
-			escapeLine();
-			while (isBlank(rd.cur()))
-			{
-				rd.next();
-				escapeLine();
-			}
-			rd.pop();
-			if (rd.cur() == EOF)
-			{
-				return;
-			}
-			Word word = getWord();
-			string tmp = "<< " + string(TypeName[word.type]) + "\t:" + word.raw + " >>";
-			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
-			//con.show(tmp.c_str());
-		}
-	}
+
 	void escapeLine()
 	{
 		if (rd.cur() != '\\')
@@ -150,7 +124,7 @@ public:
 			{
 				while (isOct(rd.cur()))
 				{
-					val = (rd.cur() - 'a' + 10)  + val * 8;
+					val = (rd.cur() - 'a' + 10) + val * 8;
 					rd.next();
 					if (val > 255)
 					{
@@ -165,128 +139,6 @@ public:
 		string tmp = string("Unexpected character: ") + rd.cur() + " .";
 		throw exception(tmp.c_str());
 	}
-	Word getWord()
-	{
-		string res;
-		WordType type=Undefined;
-		if (rd.cur() == '\'')
-		{
-			rd.next();
-			if (rd.cur() == '\\')
-			{
-				getEscape();
-			}
-			else
-			{
-				rd.next();
-			}
-			if (rd.cur() != '\'')
-			{
-				string tmp = string("Too many characters.");
-				throw exception(tmp.c_str());
-			}
-			rd.next();
-			res = rd.pop();
-			type = CCharacter;
-		}
-		else if (rd.cur() == '\"')
-		{
-			rd.next();
-			while (rd.cur() != '\"')
-			{
-				getEscape();
-			}
-			rd.next();
-			res = rd.pop();
-			type = CString;
-		}
-		else if (rd.cur() == '#')
-		{
-			rd.next();
-			while (rd.cur() != '\n' && rd.cur() != '\r')
-			{
-				if (rd.cur() == '\\')
-				{
-					rd.next();
-				}
-				rd.next();
-			}
-			res = rd.pop();
-			type = Precompile;
-		}
-		else if (isFID(rd.cur()))
-		{
-			res = getID();
-			type = (WordType)ck.Check(res);
-		}
-		else if (rd.cur() == '0')
-		{
-			rd.next();
-			if (rd.cur() == 'x' || rd.cur() == 'X')
-			{
-				rd.next();
-				if (!isHex(rd.cur()))
-				{
-					string tmp = string("Unexpected character: ") + rd.cur() + " .";
-					throw exception(tmp.c_str());
-				}
-				rd.next();
-				res = getHex();
-				type = CIntHex;
-			}
-			else
-			{
-				res = getOct();
-				type = CIntOct;
-			}
-		}
-		else if (isNDigit(rd.cur()))
-		{
-			rd.next();
-			while (isDigit(rd.cur()))
-			{
-				rd.next();
-			}
-			if (rd.cur() == '.')
-			{
-				rd.next();
-				res = get8();
-				type = CFloat;
-			}
-			else if (rd.cur() == 'e' || rd.cur() == 'E')
-			{
-				rd.next();
-				res = get9();
-				type = CFloat;
-			}
-			else
-			{
-				res = rd.pop();
-				type = CIntDec;
-			}
-		}
-		else if (rd.cur() == '.')
-		{
-			rd.next();
-			if (isDigit(rd.cur()))
-			{
-				rd.next();
-				res = get8();
-				type = CFloat;
-			}
-			else
-			{
-				res = rd.pop();
-				type = OPoint;
-			}
-		}
-		else
-		{
-			res = getOpt(type);
-		}
-		return Word(res, type);
-	}
-
 	string getOpt(WordType &type)
 	{
 		if (rd.cur() == '+')
@@ -519,7 +371,6 @@ public:
 			}
 		}
 	}
-
 	string get8()
 	{
 		while (isDigit(rd.cur()))
@@ -536,7 +387,6 @@ public:
 			return rd.pop();
 		}
 	}
-
 	string get9()
 	{
 		if (isDigit(rd.cur()))
@@ -572,16 +422,14 @@ public:
 			throw exception(tmp.c_str());
 		}
 	}
-
 	string getID()
 	{
 		while (isID(rd.cur()))
 		{
-			rd.next();													
+			rd.next();
 		}
 		return rd.pop();
 	}
-
 	string getHex()
 	{
 		while (isHex(rd.cur()))
@@ -590,7 +438,6 @@ public:
 		}
 		return rd.pop();
 	}
-
 	string getOct()
 	{
 		while (isOct(rd.cur()))
@@ -599,7 +446,177 @@ public:
 		}
 		return rd.pop();
 	}
-
+public:
+	Lexer(Reader *reader) :rd(*reader)
+	{
+	}
+	
+	void test()
+	{
+		Conshow con;
+		while (rd.cur() != EOF)
+		{
+			escapeLine();
+			while (isBlank(rd.cur()))
+			{
+				rd.next();
+				escapeLine();
+			}
+			rd.pop();
+			if (rd.cur() == EOF)
+			{
+				return;
+			}
+			Word word = _getWord();
+			string tmp = "<< " + string(TypeName[word.type]) + "\t:" + word.raw + " >>";
+			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
+		}
+	}
+	Word getWord()
+	{
+		Conshow con;
+		while (rd.cur() != EOF)
+		{
+			escapeLine();
+			while (isBlank(rd.cur()))
+			{
+				rd.next();
+				escapeLine();
+			}
+			rd.pop();
+			if (rd.cur() == EOF)
+			{
+				break;
+			}
+			Word word = _getWord();
+			return word;
+		}
+		Word word;
+		word.type = Undefined;
+		word.raw = "EOF";
+		return word;
+	}
+	Word _getWord()
+	{
+		string res;
+		WordType type=Undefined;
+		if (rd.cur() == '\'')
+		{
+			rd.next();
+			if (rd.cur() == '\\')
+			{
+				getEscape();
+			}
+			else
+			{
+				rd.next();
+			}
+			if (rd.cur() != '\'')
+			{
+				string tmp = string("Too many characters.");
+				throw exception(tmp.c_str());
+			}
+			rd.next();
+			res = rd.pop();
+			type = CCharacter;
+		}
+		else if (rd.cur() == '\"')
+		{
+			rd.next();
+			while (rd.cur() != '\"')
+			{
+				getEscape();
+			}
+			rd.next();
+			res = rd.pop();
+			type = CString;
+		}
+		else if (rd.cur() == '#')
+		{
+			rd.next();
+			while (rd.cur() != '\n' && rd.cur() != '\r')
+			{
+				if (rd.cur() == '\\')
+				{
+					rd.next();
+				}
+				rd.next();
+			}
+			res = rd.pop();
+			type = Precompile;
+		}
+		else if (isFID(rd.cur()))
+		{
+			res = getID();
+			type = (WordType)ck.Check(res);
+		}
+		else if (rd.cur() == '0')
+		{
+			rd.next();
+			if (rd.cur() == 'x' || rd.cur() == 'X')
+			{
+				rd.next();
+				if (!isHex(rd.cur()))
+				{
+					string tmp = string("Unexpected character: ") + rd.cur() + " .";
+					throw exception(tmp.c_str());
+				}
+				rd.next();
+				res = getHex();
+				type = CIntHex;
+			}
+			else
+			{
+				res = getOct();
+				type = CIntOct;
+			}
+		}
+		else if (isNDigit(rd.cur()))
+		{
+			rd.next();
+			while (isDigit(rd.cur()))
+			{
+				rd.next();
+			}
+			if (rd.cur() == '.')
+			{
+				rd.next();
+				res = get8();
+				type = CFloat;
+			}
+			else if (rd.cur() == 'e' || rd.cur() == 'E')
+			{
+				rd.next();
+				res = get9();
+				type = CFloat;
+			}
+			else
+			{
+				res = rd.pop();
+				type = CIntDec;
+			}
+		}
+		else if (rd.cur() == '.')
+		{
+			rd.next();
+			if (isDigit(rd.cur()))
+			{
+				rd.next();
+				res = get8();
+				type = CFloat;
+			}
+			else
+			{
+				res = rd.pop();
+				type = OPoint;
+			}
+		}
+		else
+		{
+			res = getOpt(type);
+		}
+		return Word(res, type);
+	}
 	~Lexer()
 	{
 	}

@@ -1,15 +1,9 @@
-#include"DFA.h"
-#include"Reader.h"
-#include"Worker.h"
-#include"conshow.h"
-
-using namespace std;
-
-int main(int argc, char *argv[])
-{
-	int b = 6 + ( 2 + 5 ) / 3;
-	bool c = ( b++ ) >= 5 || 23 > 9;
-	double d = 3.12e-15;
-	string a = "\a\t\037\x3f";\
-	return 0;
-}
+a=3+9;
+b=115+7;
+c=a>=b;
+if(c)
+	d=5;
+else
+	d=7;
+while(d>1)
+	d=d-1;
