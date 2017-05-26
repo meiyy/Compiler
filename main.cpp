@@ -3,11 +3,13 @@
 #include"lexer.h"
 #include"conshow.h"
 #include"parser.h"
+#include<tuple>
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
+	int c = 0;
 	Conshow con;
 	if (argc < 2)
 	{

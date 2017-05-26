@@ -2,7 +2,7 @@
 #include "lexer.h"
 #include "conshow.h"
 #include "word.h"
-
+typedef int PlaceType;
 class Parser
 {
 public:
@@ -10,114 +10,138 @@ public:
 	Conshow con;
 	Parser(Lexer &lex) :lex(lex) {};
 	~Parser() {};
-	Word cur;
+	Word cur,pre;
 	void work()
 	{
-		Word eof("EOF", Undefined);
 		cur = lex.getWord();
-		while (!cur.isEOF())
-		{
-			statement();
-		}
+		while(!cur.isEOF())
+			stmt();
 	}
-	void var()
-	{
-		expect(Identifier);
-		var_rest1();
-	}
-	void var_rest1()
-	{
-		if (cur.type == OLBrack)
-		{
-			expect(OLBrack);
-			bool_exp();
-			expect(ORBrack);
-			var_rest1();
-		}
-	}
-	void statement()
+	void stmt()
 	{
 		if (cur.type == Identifier)
 		{
-			var();
+			con.showInfo("stmt --> loc = bool;");
+			loc();
 			expect(OEqu);
 			bool_exp();
 			expect(OSemi);
 		}
 		else if (cur.type == KIf)
 		{
+			con.showInfo("stmt --> if(bool)stmt else stmt");
 			cur = lex.getWord();
 			expect(OLPara);
 			bool_exp();
 			expect(ORPara);
-			statement();
+			stmt();
 			expect(KElse);
-			statement();
+			stmt();
 		}
 		else if (cur.type == KWhile)
 		{
+			con.showInfo("stmt --> while(bool) stmt");
 			cur = lex.getWord();
 			expect(OLPara);
 			bool_exp();
 			expect(ORPara);
-			statement();
+			stmt();
 		}
 		else
 		{
 			unexpectSolve();
 		}
 	}
+	void loc()
+	{
+		con.showInfo("loc --> id rest1");
+		expect(Identifier);
+		rest1();
+	}
+	void rest1()
+	{
+		if (cur.type == OLBrack)
+		{
+			con.showInfo("rest1 --> [bool] rest1");
+			expect(OLBrack);
+			bool_exp();
+			expect(ORBrack);
+			rest1();
+		}
+		else
+		{
+			con.showInfo("rest1 --> e");
+		}
+	}
 	void bool_exp()
 	{
+		con.showInfo("bool --> equality");
 		equality();
 	}
 	void equality()
 	{
+		con.showInfo("equality --> rel rest4");
 		rel();
-		equ_rest4();
+		rest4();
 	}
-	void equ_rest4()
+	void rest4()
 	{
 		if (cur.type == OEquEqu)
 		{
+			con.showInfo("rest4 --> == rel rest4");
 			expect(OEquEqu);
-			rel();
-			equ_rest4();
 		}
 		else if (cur.type == ONotEqu)
 		{
+			con.showInfo("rest4 --> != rel rest4");
 			expect(ONotEqu);
-			rel();
-			equ_rest4();
 		}
+		else
+		{
+			con.showInfo("rest4 --> e");
+			return;
+		}
+		rel();
+		rest4();
 	}
 	void rel()
 	{
+		con.showInfo("rel --> expr rop_expr");
 		expr();
+		rop_expr();
+	}
+	void rop_expr()
+	{
 		if (cur.type == OLess)
 		{
+			con.showInfo("rop_expr --> < expr");
 			expect(OLess);
 		}
 		else if (cur.type == OLessEqu)
 		{
+			con.showInfo("rop_expr --> <= expr");
 			expect(OLessEqu);
 		}
 		else if (cur.type == OMore)
 		{
+			con.showInfo("rop_expr --> > expr");
 			expect(OMore);
 		}
 		else if (cur.type == OMoreEqu)
 		{
+			con.showInfo("rop_expr --> >= expr");
 			expect(OMoreEqu);
 		}
 		else
 		{
+			con.showInfo("rop_expr --> e");
 			return;
 		}
 		expr();
 	}
 	void expr()
 	{
+		con.showInfo("expr --> term rest5");
 		term();
 		rest5();
 	}
@@ -125,14 +149,17 @@ public:
 	{
 		if (cur.type == OPlus)
 		{
+			con.showInfo("rest5 --> +term rest5");
 			expect(OPlus);
 		}
 		else if (cur.type == OMinus)
 		{
+			con.showInfo("rest5 --> -term rest5");
 			expect(OMinus);
 		}
 		else
 		{
+			con.showInfo("rest5 --> e");
 			return;
 		}
 		term();
@@ -140,6 +167,7 @@ public:
 	}
 	void term()
 	{
+		con.showInfo("term --> unary rest6");
 		unary();
 		rest6();
 	}
@@ -147,14 +175,17 @@ public:
 	{
 		if (cur.type == OMul)
 		{
+			con.showInfo("rest6 --> *unary rest6");
 			expect(OMul);
 		}
 		else if (cur.type == ODiv)
 		{
+			con.showInfo("rest6 --> /unary rest6");
 			expect(ODiv);
 		}
 		else
 		{
+			con.showInfo("rest6 --> e");
 			return;
 		}
 		unary();
@@ -162,22 +193,26 @@ public:
 	}
 	void unary()
 	{
+		con.showInfo("unary --> factor");
 		factor();
 	}
 	void factor()
 	{
 		if (cur.type == OLPara)
 		{
+			con.showInfo("factor --> (bool)");
 			expect(OLPara);
 			bool_exp();
 			expect(ORPara);
 		}
 		else if (cur.type == Identifier)
 		{
-			var();
+			con.showInfo("factor --> loc");
+			loc();
 		}
 		else if (cur.type == CIntDec)
 		{
+			con.showInfo("factor --> num");
 			expect(CIntDec);
 		}
 		else
@@ -196,6 +231,7 @@ private:
 		}
 		else
 		{
+			pre = cur;
 			cur = lex.getWord();
 		}
 	}
