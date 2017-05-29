@@ -210,10 +210,10 @@ public:
 			con.showInfo("factor --> loc");
 			loc();
 		}
-		else if (cur.type == CIntDec)
+		else if (cur.type == CInt)
 		{
 			con.showInfo("factor --> num");
-			expect(CIntDec);
+			expect(CInt);
 		}
 		else
 		{

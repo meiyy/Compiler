@@ -58,16 +58,14 @@ enum WordType
 	ORPara,
 	OLBrack,
 	ORBrack,
-	CIntDec,
-	CIntOct,
-	CIntHex,
+	CInt,
 	CFloat,
 	CString,
 	CCharacter,
 	Precompile,
 	Undefined
 };
-const char* TypeName[62]= {
+const char* TypeName[60]= {
 	"KIf",
 	"KElse",
 	"KWhile",
@@ -122,9 +120,7 @@ const char* TypeName[62]= {
 	"ORPara",
 	"OLBrack",
 	"ORBrack",
-	"CIntDec",
-	"CIntOct",
-	"CIntHex",
+	"CInt",
 	"CFloat",
 	"CString",
 	"CCharacter",
@@ -132,16 +128,49 @@ const char* TypeName[62]= {
 	"Undefined"
 };
 
+
+
 class Word
 {
 public:
 	string raw;
 	WordType type;
+	void *val;
 	Word() {}
-
-	Word(string raw,WordType type):raw(raw),type(type)
+	Word(Word& a)
 	{
+		raw = a.raw;
+		type = a.type;
+		if (type == CInt)val = new int(*(int*)(a.val));
+		else if (type == CFloat)val = new double(*(double*)(a.val));
+		else if (type == CCharacter)val = new char(*(char*)(a.val));
+		else if (type == CString)val = new string(*(string*)(a.val));
+		else val = nullptr;
 	}
+	Word(Word&& a)
+	{
+		raw = a.raw;
+		type = a.type;
+		val = a.val;
+		a.val = nullptr;
+	}
+	Word& operator=(Word& a)
+	{
+		raw = a.raw;
+		type = a.type;
+		if (type == CInt)val = new int(*(int*)(a.val));
+		else if (type == CFloat)val = new double(*(double*)(a.val));
+		else if (type == CCharacter)val = new char(*(char*)(a.val));
+		else if (type == CString)val = new string(*(string*)(a.val));
+		else val = nullptr;
+		return *this;
+	}
+	Word(string raw, WordType type) :raw(raw), type(type), val(nullptr){}
+	Word(string raw, WordType type, int val) :raw(raw), type(type) { this->val = new int(val); }
+	Word(string raw, WordType type, char val) :raw(raw), type(type) { this->val = new char(val); }
+	Word(string raw, WordType type, double val) :raw(raw), type(type) { this->val = new double(val); }
+	Word(string raw, WordType type, string val) :raw(raw), type(type) { this->val = new string(val); }
+
 
 	bool isEOF()
 	{
@@ -150,5 +179,10 @@ public:
 
 	~Word()
 	{
+		if (val != nullptr)
+		{
+			delete val;
+			val = nullptr;
+		}
 	}
 };

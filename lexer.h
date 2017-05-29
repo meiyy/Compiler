@@ -1,5 +1,6 @@
 #pragma once
 #include<cstdio>
+#include<cmath>
 #include<exception>
 #include"conshow.h"
 #include"Reader.h"
@@ -68,11 +69,11 @@ private:
 		string tmp = string("Unexpected character: ") + rd.cur() + " .";
 		throw exception(tmp.c_str());
 	}
-	void getEscape()
+	int getEscape()
 	{
 		if (rd.cur() != '\\')
 		{
-			return;
+			return -1;
 		}
 		rd.next();
 		if (rd.cur() == '\r')
@@ -82,18 +83,19 @@ private:
 			{
 				rd.next();
 			}
-			return;
+			return '\n';
 		}
 		if (rd.cur() == '\n')
 		{
 			rd.next();
-			return;
+			return '\n';
 		}
 		if (rd.cur() == '\'' || rd.cur() == '\"' || rd.cur() == '\?' || rd.cur() == '\\' ||
 			rd.cur() == 'a' || rd.cur() == 'b' || rd.cur() == 'f' || rd.cur() == 'n' || rd.cur() == 'r' || rd.cur() == 't' || rd.cur() == 'v')
 		{
+			int pre = rd.cur();
 			rd.next();
-			return;
+			return pre;
 		}
 		int val = 0;
 		if (rd.cur() == 'x' || rd.cur() == 'X')
@@ -115,7 +117,7 @@ private:
 				}
 			}
 			// Deal with the val...
-			return;
+			return val;
 		}
 		if (isOct(rd.cur()))
 		{
@@ -133,13 +135,14 @@ private:
 					}
 				}
 				// Deal with the val...
-				return;
+				return val;
 			}
 		}
 		string tmp = string("Unexpected character: ") + rd.cur() + " .";
 		throw exception(tmp.c_str());
+		return -1;
 	}
-	string getOpt(WordType &type)
+	string getOperator(WordType &type)
 	{
 		if (rd.cur() == '+')
 		{
@@ -371,76 +374,9 @@ private:
 			}
 		}
 	}
-	string get8()
-	{
-		while (isDigit(rd.cur()))
-		{
-			rd.next();
-		}
-		if (rd.cur() == 'e' || rd.cur() == 'E')
-		{
-			rd.next();
-			return get9();
-		}
-		else
-		{
-			return rd.pop();
-		}
-	}
-	string get9()
-	{
-		if (isDigit(rd.cur()))
-		{
-			rd.next();
-			while (isDigit(rd.cur()))
-			{
-				rd.next();
-			}
-			return rd.pop();
-		}
-		else if (rd.cur() == '-' || rd.cur() == '+')
-		{
-			rd.next();
-			if (isDigit(rd.cur()))
-			{
-				rd.next();
-				while (isDigit(rd.cur()))
-				{
-					rd.next();
-				}
-				return rd.pop();
-			}
-			else
-			{
-				string tmp = string("Unexpected character: ") + rd.cur() + " .";
-				throw exception(tmp.c_str());
-			}
-		}
-		else
-		{
-			string tmp = string("Unexpected character: ") + rd.cur() + " .";
-			throw exception(tmp.c_str());
-		}
-	}
 	string getID()
 	{
 		while (isID(rd.cur()))
-		{
-			rd.next();
-		}
-		return rd.pop();
-	}
-	string getHex()
-	{
-		while (isHex(rd.cur()))
-		{
-			rd.next();
-		}
-		return rd.pop();
-	}
-	string getOct()
-	{
-		while (isOct(rd.cur()))
 		{
 			rd.next();
 		}
@@ -488,27 +424,23 @@ public:
 			{
 				break;
 			}
-			Word word = _getWord();
-			return word;
+			return _getWord();
 		}
-		Word word;
-		word.type = Undefined;
-		word.raw = "EOF";
-		return word;
+		return Word("EOF",Undefined);
 	}
 	Word _getWord()
 	{
-		string res;
-		WordType type=Undefined;
 		if (rd.cur() == '\'')
 		{
 			rd.next();
+			int val;
 			if (rd.cur() == '\\')
 			{
-				getEscape();
+				val=getEscape();
 			}
 			else
 			{
+				val = rd.cur();
 				rd.next();
 			}
 			if (rd.cur() != '\'')
@@ -517,8 +449,7 @@ public:
 				throw exception(tmp.c_str());
 			}
 			rd.next();
-			res = rd.pop();
-			type = CCharacter;
+			return Word(rd.pop(), CCharacter,(char)val);
 		}
 		else if (rd.cur() == '\"')
 		{
@@ -528,8 +459,8 @@ public:
 				getEscape();
 			}
 			rd.next();
-			res = rd.pop();
-			type = CString;
+			string val = rd.pop();
+			return Word(val, CString, val);
 		}
 		else if (rd.cur() == '#')
 		{
@@ -542,13 +473,12 @@ public:
 				}
 				rd.next();
 			}
-			res = rd.pop();
-			type = Precompile;
+			return Word(rd.pop(), Precompile);
 		}
 		else if (isFID(rd.cur()))
 		{
-			res = getID();
-			type = (WordType)ck.Check(res);
+			string tmp = getID();
+			return Word(tmp, (WordType)ck.Check(tmp));
 		}
 		else if (rd.cur() == '0')
 		{
@@ -561,61 +491,210 @@ public:
 					string tmp = string("Unexpected character: ") + rd.cur() + " .";
 					throw exception(tmp.c_str());
 				}
-				rd.next();
-				res = getHex();
-				type = CIntHex;
+				long long val = 0;
+				while (isHex(rd.cur()))
+				{
+					val = val * 16 + isDigit(rd.cur()) ? rd.cur() - '0' : 10+(isLAlpha(rd.cur()) ? rd.cur() - 'a' : rd.cur() - 'A');
+					rd.next();
+				}
+				if (val & 0xffffffff00000000ull)
+				{
+					throw exception("The constant is too large for int type.");
+				}
+				return Word(rd.pop(), CInt, (int)val);
 			}
 			else
 			{
-				res = getOct();
-				type = CIntOct;
+				int val = 0;
+				while (isOct(rd.cur()))
+				{
+					val = val * 8 + rd.cur() - '0';
+					rd.next();
+				}
+				return Word(rd.pop(), CInt, val);
 			}
 		}
 		else if (isNDigit(rd.cur()))
 		{
 			rd.next();
+			long long val1 = 0;
+			int exp = 0;
 			while (isDigit(rd.cur()))
 			{
+				val1 = val1 * 10 + rd.cur() - '0';
 				rd.next();
 			}
 			if (rd.cur() == '.')
 			{
 				rd.next();
-				res = get8();
-				type = CFloat;
+				double val2 = 0,div=10;
+				while (isDigit(rd.cur()))
+				{
+					val2 = val2 + (rd.cur() - '0') / div;
+					div = div / 10;
+					rd.next();
+				}
+				if (rd.cur() == 'e' || rd.cur() == 'E')
+				{
+					rd.next();
+					if (isDigit(rd.cur()))
+					{
+						exp = rd.cur() - '0';
+						rd.next();
+						while (isDigit(rd.cur()))
+						{
+							exp = exp * 10 + rd.cur() - '0';
+							rd.next();
+						}
+					}
+					else if (rd.cur() == '-' || rd.cur() == '+')
+					{
+						bool flag = rd.cur() == '-';
+						rd.next();
+						if (isDigit(rd.cur()))
+						{
+							exp = rd.cur() - '0';
+							rd.next();
+							while (isDigit(rd.cur()))
+							{
+								exp = exp * 10 + rd.cur() - '0';
+								rd.next();
+							}
+							if (flag)exp = -exp;
+						}
+						else
+						{
+							string tmp = string("Unexpected character: ") + rd.cur() + " .";
+							throw exception(tmp.c_str());
+						}
+					}
+					else
+					{
+						string tmp = string("Unexpected character: ") + rd.cur() + " .";
+						throw exception(tmp.c_str());
+					}
+				}
+				return Word(rd.pop(),CFloat,(val1+val2)*std::exp(exp));
 			}
 			else if (rd.cur() == 'e' || rd.cur() == 'E')
 			{
 				rd.next();
-				res = get9();
-				type = CFloat;
+				if (isDigit(rd.cur()))
+				{
+					exp = rd.cur() - '0';
+					rd.next();
+					while (isDigit(rd.cur()))
+					{
+						exp = exp * 10 + rd.cur() - '0';
+						rd.next();
+					}
+				}
+				else if (rd.cur() == '-' || rd.cur() == '+')
+				{
+					bool flag = rd.cur() == '-';
+					rd.next();
+					if (isDigit(rd.cur()))
+					{
+						exp = rd.cur() - '0';
+						rd.next();
+						while (isDigit(rd.cur()))
+						{
+							exp = exp * 10 + rd.cur() - '0';
+							rd.next();
+						}
+						if (flag)exp = -exp;
+					}
+					else
+					{
+						string tmp = string("Unexpected character: ") + rd.cur() + " .";
+						throw exception(tmp.c_str());
+					}
+				}
+				else
+				{
+					string tmp = string("Unexpected character: ") + rd.cur() + " .";
+					throw exception(tmp.c_str());
+				}
+				return Word(rd.pop(), CFloat, val1*std::exp(exp));
 			}
 			else
 			{
-				res = rd.pop();
-				type = CIntDec;
+				if (val1 & 0xffffffff00000000ull)
+				{
+					throw exception("The constant is too large for int type.");
+				}
+				return Word(rd.pop(), CInt, (int)val1);
 			}
 		}
 		else if (rd.cur() == '.')
 		{
 			rd.next();
+			double val2 = 0, tt = 10;
+			int exp = 0;
 			if (isDigit(rd.cur()))
 			{
+				val2 = (rd.cur() - '0') / tt;
 				rd.next();
-				res = get8();
-				type = CFloat;
+				while (isDigit(rd.cur()))
+				{
+					val2 = val2+(rd.cur() - '0') / tt;
+					tt = tt * 10;
+					rd.next();
+				}
+				if (rd.cur() == 'e' || rd.cur() == 'E')
+				{
+					rd.next();
+					if (isDigit(rd.cur()))
+					{
+						exp = rd.cur()-'0';
+						rd.next();
+						while (isDigit(rd.cur()))
+						{
+							exp = exp * 10 + rd.cur() - '0';
+							rd.next();
+						}
+					}
+					else if (rd.cur() == '-' || rd.cur() == '+')
+					{
+						bool flag = rd.cur() == '-';
+						rd.next();
+						if (isDigit(rd.cur()))
+						{
+							exp = rd.cur()-'0';
+							rd.next();
+							while (isDigit(rd.cur()))
+							{
+								exp = exp * 10 + rd.cur() - '0';
+								rd.next();
+							}
+							if (flag)
+								exp = -exp;
+						}
+						else
+						{
+							string tmp = string("Unexpected character: ") + rd.cur() + " .";
+							throw exception(tmp.c_str());
+						}
+					}
+					else
+					{
+						string tmp = string("Unexpected character: ") + rd.cur() + " .";
+						throw exception(tmp.c_str());
+					}
+				}
+				return Word(rd.pop(),CFloat,val2*std::exp(exp));
 			}
 			else
 			{
-				res = rd.pop();
-				type = OPoint;
+				return Word(rd.pop(), OPoint);
 			}
 		}
 		else
 		{
-			res = getOpt(type);
+			WordType type;
+			string res = getOperator(type);
+			return Word(res, type);
 		}
-		return Word(res, type);
 	}
 	~Lexer()
 	{
