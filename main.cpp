@@ -10,7 +10,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 	int c = 0;
-	Conshow con;
+	Output con;
 	if (argc < 2)
 	{
 		con.showVersion();
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	}
 	catch (exception e)
 	{
-		con.showError(e.what());
+		con.error<<e.what()<<endl;
 		exit(EXIT_FAILURE);
 	}
 	Lexer lexer = Lexer(reader);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	}
 	catch (exception &err)
 	{
-		con.showError(err.what());
+		con.error<<err.what()<<endl;
 	}
 	delete reader;
 	reader = nullptr;

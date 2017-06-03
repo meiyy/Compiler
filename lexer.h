@@ -32,6 +32,7 @@ public:
 class Lexer
 {
 private:
+	Output con;
 	Reader &rd;
 	KeyWordChecker ck;
 	bool isLAlpha(char c) { return c >= 'A' && c <= 'Z'; }
@@ -66,7 +67,7 @@ private:
 			rd.next();
 			return;
 		}
-		string tmp = string("Unexpected character: ") + rd.cur() + " .";
+		string tmp= string("Unexpected character: ") + rd.cur() + " .";
 		throw exception(tmp.c_str());
 	}
 	int getEscape()
@@ -103,7 +104,7 @@ private:
 			rd.next();
 			if (!isHex(rd.cur()))
 			{
-				string tmp = string("Unexpected character: ") + rd.cur() + " .";
+				string tmp=string("Charactor ") + rd.cur() + " is illegal in hexual number.";
 				throw exception(tmp.c_str());
 			}
 			while (isHex(rd.cur()))
@@ -382,52 +383,6 @@ private:
 		}
 		return rd.pop();
 	}
-public:
-	Lexer(Reader *reader) :rd(*reader)
-	{
-	}
-	
-	void test()
-	{
-		Conshow con;
-		while (rd.cur() != EOF)
-		{
-			escapeLine();
-			while (isBlank(rd.cur()))
-			{
-				rd.next();
-				escapeLine();
-			}
-			rd.pop();
-			if (rd.cur() == EOF)
-			{
-				return;
-			}
-			Word word = _getWord();
-			string tmp = "<< " + string(TypeName[word.type]) + "\t:" + word.raw + " >>";
-			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
-		}
-	}
-	Word getWord()
-	{
-		Conshow con;
-		while (rd.cur() != EOF)
-		{
-			escapeLine();
-			while (isBlank(rd.cur()))
-			{
-				rd.next();
-				escapeLine();
-			}
-			rd.pop();
-			if (rd.cur() == EOF)
-			{
-				break;
-			}
-			return _getWord();
-		}
-		return Word("EOF",Undefined);
-	}
 	Word _getWord()
 	{
 		if (rd.cur() == '\'')
@@ -436,7 +391,7 @@ public:
 			int val;
 			if (rd.cur() == '\\')
 			{
-				val=getEscape();
+				val = getEscape();
 			}
 			else
 			{
@@ -449,7 +404,7 @@ public:
 				throw exception(tmp.c_str());
 			}
 			rd.next();
-			return Word(rd.pop(), CCharacter,(char)val);
+			return Word(rd.pop(), CCharacter, (char)val);
 		}
 		else if (rd.cur() == '\"')
 		{
@@ -494,7 +449,7 @@ public:
 				long long val = 0;
 				while (isHex(rd.cur()))
 				{
-					val = val * 16 + isDigit(rd.cur()) ? rd.cur() - '0' : 10+(isLAlpha(rd.cur()) ? rd.cur() - 'a' : rd.cur() - 'A');
+					val = val * 16 + isDigit(rd.cur()) ? rd.cur() - '0' : 10 + (isLAlpha(rd.cur()) ? rd.cur() - 'a' : rd.cur() - 'A');
 					rd.next();
 				}
 				if (val & 0xffffffff00000000ull)
@@ -527,7 +482,7 @@ public:
 			if (rd.cur() == '.')
 			{
 				rd.next();
-				double val2 = 0,div=10;
+				double val2 = 0, div = 10;
 				while (isDigit(rd.cur()))
 				{
 					val2 = val2 + (rd.cur() - '0') / div;
@@ -574,7 +529,7 @@ public:
 						throw exception(tmp.c_str());
 					}
 				}
-				return Word(rd.pop(),CFloat,(val1+val2)*std::exp(exp));
+				return Word(rd.pop(), CFloat, (val1 + val2)*std::exp(exp));
 			}
 			else if (rd.cur() == 'e' || rd.cur() == 'E')
 			{
@@ -637,7 +592,7 @@ public:
 				rd.next();
 				while (isDigit(rd.cur()))
 				{
-					val2 = val2+(rd.cur() - '0') / tt;
+					val2 = val2 + (rd.cur() - '0') / tt;
 					tt = tt * 10;
 					rd.next();
 				}
@@ -646,7 +601,7 @@ public:
 					rd.next();
 					if (isDigit(rd.cur()))
 					{
-						exp = rd.cur()-'0';
+						exp = rd.cur() - '0';
 						rd.next();
 						while (isDigit(rd.cur()))
 						{
@@ -660,7 +615,7 @@ public:
 						rd.next();
 						if (isDigit(rd.cur()))
 						{
-							exp = rd.cur()-'0';
+							exp = rd.cur() - '0';
 							rd.next();
 							while (isDigit(rd.cur()))
 							{
@@ -682,7 +637,7 @@ public:
 						throw exception(tmp.c_str());
 					}
 				}
-				return Word(rd.pop(),CFloat,val2*std::exp(exp));
+				return Word(rd.pop(), CFloat, val2*std::exp(exp));
 			}
 			else
 			{
@@ -695,6 +650,84 @@ public:
 			string res = getOperator(type);
 			return Word(res, type);
 		}
+	}
+	void deal()
+	{
+		while (true)
+		{
+			switch (rd.cur())
+			{
+			case EOF:
+			case '\r':
+			case '\n':
+			case ' ':
+			case '[':
+			case ']':
+			case '(':
+			case ')':
+			case '{':
+			case '}':
+			case ',':
+			case ';':
+				return;
+			}
+			rd.next();
+		}
+	}
+public:
+	Lexer(Reader *reader) :rd(*reader)
+	{
+	}
+	
+	void test()
+	{
+		while (rd.cur() != EOF)
+		{
+			escapeLine();
+			while (isBlank(rd.cur()))
+			{
+				rd.next();
+				escapeLine();
+			}
+			rd.pop();
+			if (rd.cur() == EOF)
+			{
+				return;
+			}
+			Word word = _getWord();
+			string tmp = "<< " + string(TypeName[word.type]) + "\t:" + word.raw + " >>";
+			printf("<<%15s : %15s>>\n", TypeName[word.type], word.raw.c_str());
+		}
+	}
+
+	Word getWord()
+	{
+		Word ret;
+		if (rd.cur() != EOF)
+		{
+			try {
+				escapeLine();
+				while (isBlank(rd.cur()))
+				{
+					rd.next();
+					escapeLine();
+				}
+				rd.pop();
+				if (rd.cur() == EOF)
+				{
+					return Word("EOF", Undefined);
+				}
+				ret = _getWord();
+			}
+			catch(exception &e)
+			{
+				con.error << e.what() << endl;
+				deal();
+				return getWord();
+			}
+			return ret;
+		}
+		return Word("EOF",Undefined);
 	}
 	~Lexer()
 	{

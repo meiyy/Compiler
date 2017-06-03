@@ -2,49 +2,126 @@
 #include "lexer.h"
 #include "conshow.h"
 #include "word.h"
+#include<tuple>
+#include<vector>
 typedef int PlaceType;
 class Parser
 {
+	struct ParaList
+	{
+		vector<int> nextlist;
+		int quad;
+		int falselist;
+		int truelist;
+		int offset;
+		int place;
+	};
 public:
 	Lexer &lex;
-	Conshow con;
+	Output con;
 	Parser(Lexer &lex) :lex(lex) {};
 	~Parser() {};
 	Word cur,pre;
 	void work()
 	{
 		cur = lex.getWord();
-		while(!cur.isEOF())
-			stmt();
+		/*while(!cur.isEOF())
+			stmt();*/
+		stmts();
 	}
-	void stmt()
+	void stmts()
 	{
+		ParaList out,inrest0;
+		con.info<<"stmts --> stmt rest0"<<endl;
+		ParaList outstmt=stmt();
+		inrest0.nextlist = outstmt.nextlist;
+		ParaList outrest0=rest0(inrest0);
+		out.nextlist = outrest0.nextlist;
+	}
+	ParaList rest0(ParaList in)
+	{
+		ParaList out;
+		if (cur.type == Identifier || cur.type == KIf || cur.type == KWhile)
+		{
+			ParaList inrest01;
+			con.info<<"rest0 --> m stmt rest0"<<endl;
+			ParaList outm=m();
+			ParaList outstmt=stmt();
+			//{backpatch(in.nextlist, outm.quad);
+			inrest01.nextlist = outstmt.nextlist;
+			ParaList outrest01=rest0(inrest01);
+			out.nextlist = outrest01.nextlist;
+		}
+		else
+		{
+			con.info<<"rest0 --> e"<<endl;
+			out.nextlist = in.nextlist;
+		}
+		return out;
+	}
+	ParaList m()
+	{
+		ParaList out;
+		con.info<<"m --> e"<<endl;
+		out.quad = nextquad();
+		return out;
+	}
+	ParaList n()
+	{
+		ParaList out;
+		con.info<<"n --> e"<<endl;
+		out.nextlist = makelist(nextquad());
+		con.code << "j,-,-,0" << endl;
+		return out;
+	}
+	ParaList stmt()
+	{
+		ParaList out;
 		if (cur.type == Identifier)
 		{
-			con.showInfo("stmt --> loc = bool;");
-			loc();
+			con.info<<"stmt --> loc = expr;"<<endl;
+			ParaList outloc=loc();
 			expect(OEqu);
-			bool_exp();
+			ParaList outexpr=expr();
 			expect(OSemi);
+			if (outloc.offset == -1)
+			{
+				con.code << "=," << outexpr.place << ",-," << outloc.place << endl;
+			}
+			else
+			{
+				con.code << "[]=" << outexpr.place << ",-," << outloc.place << "[" << outloc.offset << "]" << endl;
+			}
+			out.nextlist = makelist();
 		}
 		else if (cur.type == KIf)
 		{
-			con.showInfo("stmt --> if(bool)stmt else stmt");
+			con.info<<"stmt --> if(rel)m stmt else m stmt"<<endl;
 			cur = lex.getWord();
 			expect(OLPara);
-			bool_exp();
+			ParaList outrel=rel();
 			expect(ORPara);
-			stmt();
+			ParaList outm1 = m();
+			ParaList outstmt1=stmt();
+			ParaList outn=n();
 			expect(KElse);
-			stmt();
+			ParaList outm2 = m();
+			ParaList outstmt2=stmt();
+			//backpatch(outrel.truelist, outm1.quad);
+			//backpatch(outrel.falselist, outm2.quad);
+			out.nextlist = outstmt1.nextlist;
+			out.nextlist.insert(out.nextlist.end(), outn.nextlist.begin(), outn.nextlist.end());
+			out.nextlist.insert(out.nextlist.end(), outstmt2.nextlist.begin(), outstmt2.nextlist.end());
 		}
 		else if (cur.type == KWhile)
 		{
-			con.showInfo("stmt --> while(bool) stmt");
+			con.info<<"stmt --> while(m rel)m stmt"<<endl;
 			cur = lex.getWord();
 			expect(OLPara);
-			bool_exp();
+			m();
+			rel();
 			expect(ORPara);
+			m();
 			stmt();
 		}
 		else
@@ -52,167 +129,185 @@ public:
 			unexpectSolve();
 		}
 	}
-	void loc()
+	ParaList loc()
 	{
-		con.showInfo("loc --> id rest1");
 		expect(Identifier);
-		rest1();
-	}
-	void rest1()
-	{
 		if (cur.type == OLBrack)
 		{
-			con.showInfo("rest1 --> [bool] rest1");
-			expect(OLBrack);
-			bool_exp();
-			expect(ORBrack);
-			rest1();
+			con.info<<"loc --> elist]"<<endl;
+			cur = lex.getWord();
+			elist();
 		}
 		else
 		{
-			con.showInfo("rest1 --> e");
+			con.info<<"loc --> id"<<endl;
 		}
 	}
-	void bool_exp()
+	ParaList elist()
 	{
-		con.showInfo("bool --> equality");
+		con.info<<"elist --> id[expr rest1"<<endl;
+		expr();
+		rest1();
+	}
+	ParaList rest1()
+	{
+		if (cur.type != ORBrace)
+		{
+			con.info<<"rest1 --> e"<<endl;
+			
+		}
+		else
+		{
+			con.info<<"rest1 --> ][expr rest1"<<endl;
+			expect(ORBrack);
+			expect(OLBrack);
+			expr();
+			rest1();
+		}
+	}
+	ParaList bool_exp()
+	{
+		con.info<<"bool --> equality"<<endl;
 		equality();
 	}
-	void equality()
+	ParaList equality()
 	{
-		con.showInfo("equality --> rel rest4");
+		con.info<<"equality --> rel rest4"<<endl;
 		rel();
 		rest4();
 	}
-	void rest4()
+	ParaList rest4()
 	{
 		if (cur.type == OEquEqu)
 		{
-			con.showInfo("rest4 --> == rel rest4");
+			con.info<<"rest4 --> == rel rest4"<<endl;
 			expect(OEquEqu);
 		}
 		else if (cur.type == ONotEqu)
 		{
-			con.showInfo("rest4 --> != rel rest4");
+			con.info<<"rest4 --> != rel rest4"<<endl;
 			expect(ONotEqu);
 		}
 		else
 		{
-			con.showInfo("rest4 --> e");
+			con.info<<"rest4 --> e"<<endl;
 			return;
 		}
 		rel();
 		rest4();
 	}
-	void rel()
+	ParaList rel()
 	{
-		con.showInfo("rel --> expr rop_expr");
+		con.info<<"rel --> expr relop expr"<<endl;
 		expr();
-		rop_expr();
+		relop();
+		expr();
 	}
-	void rop_expr()
+	ParaList relop()
 	{
 		if (cur.type == OLess)
 		{
-			con.showInfo("rop_expr --> < expr");
+			con.info<<"relop --> <"<<endl;
 			expect(OLess);
 		}
 		else if (cur.type == OLessEqu)
 		{
-			con.showInfo("rop_expr --> <= expr");
+			con.info<<"relop --> <="<<endl;
 			expect(OLessEqu);
 		}
 		else if (cur.type == OMore)
 		{
-			con.showInfo("rop_expr --> > expr");
+			con.info<<"relop --> >"<<endl;
 			expect(OMore);
 		}
 		else if (cur.type == OMoreEqu)
 		{
-			con.showInfo("rop_expr --> >= expr");
+			con.info<<"relop --> >="<<endl;
 			expect(OMoreEqu);
 		}
 		else
 		{
-			con.showInfo("rop_expr --> e");
-			return;
+			expr();
 		}
-		expr();
 	}
-	void expr()
+	ParaList expr()
 	{
-		con.showInfo("expr --> term rest5");
+		con.info<<"expr --> term rest5"<<endl;
 		term();
 		rest5();
 	}
-	void rest5()
+	ParaList rest5()
 	{
 		if (cur.type == OPlus)
 		{
-			con.showInfo("rest5 --> +term rest5");
+			con.info<<"rest5 --> +term rest5"<<endl;
 			expect(OPlus);
+			term();
+			rest5();
 		}
 		else if (cur.type == OMinus)
 		{
-			con.showInfo("rest5 --> -term rest5");
+			con.info<<"rest5 --> -term rest5"<<endl;
 			expect(OMinus);
+			term();
+			rest5();
 		}
 		else
 		{
-			con.showInfo("rest5 --> e");
+			con.info<<"rest5 --> e"<<endl;
 			return;
 		}
-		term();
-		rest5();
 	}
-	void term()
+	ParaList term()
 	{
-		con.showInfo("term --> unary rest6");
+		con.info<<"term --> unary rest6"<<endl;
 		unary();
 		rest6();
 	}
-	void rest6()
+	ParaList rest6()
 	{
 		if (cur.type == OMul)
 		{
-			con.showInfo("rest6 --> *unary rest6");
+			con.info<<"rest6 --> *unary rest6"<<endl;
 			expect(OMul);
+			unary();
+			rest6();
 		}
 		else if (cur.type == ODiv)
 		{
-			con.showInfo("rest6 --> /unary rest6");
+			con.info<<"rest6 --> /unary rest6"<<endl;
 			expect(ODiv);
+			unary();
+			rest6();
 		}
 		else
 		{
-			con.showInfo("rest6 --> e");
+			con.info<<"rest6 --> e"<<endl;
 			return;
 		}
-		unary();
-		rest6();
 	}
-	void unary()
+	ParaList unary()
 	{
-		con.showInfo("unary --> factor");
+		con.info<<"unary --> factor"<<endl;
 		factor();
 	}
-	void factor()
+	ParaList factor()
 	{
 		if (cur.type == OLPara)
 		{
-			con.showInfo("factor --> (bool)");
+			con.info<<"factor --> (expr)"<<endl;
 			expect(OLPara);
-			bool_exp();
+			expr();
 			expect(ORPara);
 		}
 		else if (cur.type == Identifier)
 		{
-			con.showInfo("factor --> loc");
+			con.info<<"factor --> loc"<<endl;
 			loc();
 		}
 		else if (cur.type == CInt)
 		{
-			con.showInfo("factor --> num");
+			con.info<<"factor --> num"<<endl;
 			expect(CInt);
 		}
 		else
@@ -221,13 +316,16 @@ public:
 		}
 	}
 private:
+	int nextquad() { return 0; }
+	vector<int> makelist() { return vector<int>(); }
+	vector<int> makelist(int n) { return vector<int>(1,n); }
 	void expect(WordType type)
 	{
 		if (cur.type != type)
 		{
 			char tmp[128] = "Expect ";
 			strcat_s(tmp, TypeName[type]);
-			con.showError(tmp);
+			con.error << tmp << endl;
 		}
 		else
 		{
@@ -237,8 +335,7 @@ private:
 	}
 	void unexpectSolve()
 	{
-		con.showError("Unexpected word.");
-		con.showInfo(cur.raw.c_str());
+		con.error<<"Unexpected word:"<<cur.raw<<endl;
 		cur = lex.getWord();
 	}
 };

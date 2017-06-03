@@ -5,42 +5,46 @@
 #include<iostream>
 #include<string>
 using namespace std;
-class Conshow
+
+class Output
 {
+	class Myostream
+	{
+		ostream &out;
+		string prefix;
+	public:
+		Myostream(ostream& out,string prefix):out(out),prefix(prefix)
+		{
+		}
+		template<class T>
+		ostream& operator<<(T something)
+		{
+			out << prefix << something;
+			return out;
+		}
+	};
 public:
-
-	Conshow()
+	Myostream out,error,info,warning,code;
+	Output():
+		out(cout, ""),
+		error(cerr, "[Error] "),
+		info(cerr, "[Info] "),
+		warning(cerr, "[Warning] "),
+		code(clog,"[Code] ")
 	{
-	}
-
-	void showError(const char* msg)
-	{
-		std::cerr << "[ERROR]" << msg << std::endl;
-	}
-	void showWarning(const char* msg)
-	{
-		std::cerr << "[WARNING]" << msg << std::endl;
-	}
-	void showInfo(const char* msg)
-	{
-		std::cout << "[INFO]" << msg << std::endl;
-	}
-	void show(const char* msg)
-	{
-		std::cout << msg << std::endl;
 	}
 	void showVersion()
 	{
-		show("Also Another Compiler 1.0.0");
-		show("BY Zeyu Shen");
-		show("Compile time:" __DATE__  "  " __TIME__);
+		out<<"Also Another Compiler 1.0.0"<<endl;
+		out<<"BY Zeyu Shen" << endl;
+		out << "Compile time:" __DATE__  "  " __TIME__ << endl;
 	}
 	void showMenu()
 	{
-		cout << "Usage: Compiler.exe                 Show this help information." << endl;
-		cout << "       Compiler.exe FILENAME        Process the source file." << endl;
+		out << "Usage: Compiler.exe                 Show this help information." << endl;
+		out << "       Compiler.exe FILENAME        Process the source file." << endl;
 	}
-	~Conshow()
+	~Output()
 	{
 	}
 };

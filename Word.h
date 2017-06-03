@@ -171,7 +171,7 @@ public:
 	Word(string raw, WordType type, double val) :raw(raw), type(type) { this->val = new double(val); }
 	Word(string raw, WordType type, string val) :raw(raw), type(type) { this->val = new string(val); }
 
-
+	
 	bool isEOF()
 	{
 		return raw == "EOF" && type == Undefined;
