@@ -136,7 +136,7 @@ public:
 	string raw;
 	WordType type;
 	void *val;
-	Word() {}
+	Word() { val = nullptr; }
 	Word(Word& a)
 	{
 		raw = a.raw;

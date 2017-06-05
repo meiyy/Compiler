@@ -10,11 +10,14 @@ class Parser
 	struct ParaList
 	{
 		vector<int> nextlist;
+		vector<int>  falselist;
+		vector<int>  truelist;
+		string op;
 		int quad;
-		int falselist;
-		int truelist;
 		int offset;
 		int place;
+		int array;
+		int ndim;
 	};
 public:
 	Lexer &lex;
@@ -71,7 +74,7 @@ public:
 		ParaList out;
 		con.info<<"n --> e"<<endl;
 		out.nextlist = makelist(nextquad());
-		con.code << "j,-,-,0" << endl;
+		//con.code << "j,-,-,0" << endl;
 		return out;
 	}
 	ParaList stmt()
@@ -86,11 +89,11 @@ public:
 			expect(OSemi);
 			if (outloc.offset == -1)
 			{
-				con.code << "=," << outexpr.place << ",-," << outloc.place << endl;
+				//con.code << "=," << outexpr.place << ",-," << outloc.place << endl;
 			}
 			else
 			{
-				con.code << "[]=" << outexpr.place << ",-," << outloc.place << "[" << outloc.offset << "]" << endl;
+				//con.code << "[]=" << outexpr.place << ",-," << outloc.place << "[" << outloc.offset << "]" << endl;
 			}
 			out.nextlist = makelist();
 		}
@@ -118,53 +121,91 @@ public:
 			con.info<<"stmt --> while(m rel)m stmt"<<endl;
 			cur = lex.getWord();
 			expect(OLPara);
-			m();
-			rel();
+			ParaList outm1=m();
+			ParaList outrel=rel();
 			expect(ORPara);
-			m();
-			stmt();
+			ParaList outm2=m();
+			ParaList outstmt=stmt();
+			//backpatch(outstmt.nextlist, outm1.quad);
+			//backpatch(outrel.truelist, outm2.quad);
+			out.nextlist = outrel.falselist;
+			//emit(¡®j, -, -, ¡¯ m1.quad);
 		}
 		else
 		{
 			unexpectSolve();
 		}
+		return out;
 	}
 	ParaList loc()
 	{
+		ParaList out;
 		expect(Identifier);
 		if (cur.type == OLBrack)
 		{
 			con.info<<"loc --> elist]"<<endl;
 			cur = lex.getWord();
-			elist();
+			ParaList outelist=elist();
+			expect(ORBrack);
+			out.place = newtemp();
+			//emit(¡® - , ¡¯ outelist.arry ¡®, ¡¯ C ¡®, ¡¯ out.place);
+			out.offset = newtemp();
+			//emit(¡®*, ¡¯ w ¡®, ¡¯ outelist.place ¡®, ¡¯ out.offset);
 		}
 		else
 		{
+			//out.place = pre.place;
+			out.offset = -1;
 			con.info<<"loc --> id"<<endl;
 		}
+		return out;
 	}
 	ParaList elist()
 	{
+		ParaList out,inrest;
 		con.info<<"elist --> id[expr rest1"<<endl;
-		expr();
-		rest1();
+		ParaList outexpr=expr();
+		//inrest.array = pre.place;
+		inrest.ndim = 1;
+		inrest.place = outexpr.place;
+		ParaList outrest1=rest1(inrest);
+		out.array = outrest1.array;
+		out.ndim = outrest1.ndim;
+		out.place = outrest1.place;
+		return out;
 	}
-	ParaList rest1()
+	ParaList rest1(ParaList in)
 	{
+		ParaList out;
 		if (cur.type != ORBrace)
 		{
 			con.info<<"rest1 --> e"<<endl;
-			
+			out.array = in.array;
+			out.ndim = in.ndim;
+			out.place = in.place;
 		}
 		else
 		{
+			ParaList inrest1;
 			con.info<<"rest1 --> ][expr rest1"<<endl;
 			expect(ORBrack);
 			expect(OLBrack);
-			expr();
-			rest1();
+			ParaList outexpr=expr();
+			int t = newtemp();
+			int m = inrest1.ndim + 1;
+			//emit(¡®*, ¡¯ rest1.in_place ¡®, ¡¯ limit(rest1.in_array, m) ¡®, ¡¯ t);
+			//emit(¡®+,¡¯ t ¡®,¡¯ expr.place ¡®,¡¯ t);
+			inrest1.array = in.array;
+			inrest1.ndim = m;
+			inrest1.place = t;
+			ParaList outrest1=rest1(inrest1);
+			out.array = outrest1.array;
+			out.ndim = outrest1.ndim;
+			out.place = outrest1.place;
 		}
+		return out;
 	}
+	/*START--- To Be Completed */
 	ParaList bool_exp()
 	{
 		con.info<<"bool --> equality"<<endl;
@@ -191,134 +232,196 @@ public:
 		else
 		{
 			con.info<<"rest4 --> e"<<endl;
-			return;
 		}
 		rel();
 		rest4();
+
 	}
+	/*END--- To Be Completed */
 	ParaList rel()
 	{
+		ParaList out;
 		con.info<<"rel --> expr relop expr"<<endl;
-		expr();
-		relop();
-		expr();
+		ParaList outexpr1 = expr();
+		ParaList outrelop = relop();
+		ParaList outexpr2 = expr();
+		out.truelist = makelist(nextquad());
+		out.falselist = makelist(nextquad() + 1);
+		//emit(¡®j¡¯ relop.op ¡®, ¡¯ expr1.place ¡®, ¡¯ expr2.place ¡®, ¡¯ ¡®0¡¯);
+		//emit( ¡®j, -, -, 0¡¯ )}
+		return out;
 	}
 	ParaList relop()
 	{
+		ParaList out;
 		if (cur.type == OLess)
 		{
+			out.op = "<";
 			con.info<<"relop --> <"<<endl;
 			expect(OLess);
 		}
 		else if (cur.type == OLessEqu)
 		{
+			out.op = "<=";
 			con.info<<"relop --> <="<<endl;
 			expect(OLessEqu);
 		}
 		else if (cur.type == OMore)
 		{
+			out.op = ">";
 			con.info<<"relop --> >"<<endl;
 			expect(OMore);
 		}
 		else if (cur.type == OMoreEqu)
 		{
+			out.op = ">=";
 			con.info<<"relop --> >="<<endl;
 			expect(OMoreEqu);
 		}
 		else
 		{
 			expr();
+			out.truelist = makelist(nextquad());
+			out.falselist = makelist(nextquad() + 1);
+			//emit(¡®jnz, ¡¯ expr.place ¡®, -, ¡¯ 0);
+			//emit(¡®j, -, -, 0¡¯);}
 		}
+		return out;
 	}
 	ParaList expr()
 	{
+		ParaList out,inrest5;
 		con.info<<"expr --> term rest5"<<endl;
-		term();
-		rest5();
+		ParaList outterm=term();
+		inrest5.place = outterm.place;
+		ParaList outrest5=rest5(inrest5);
+		out.place = outrest5.place;
+		return out;
 	}
-	ParaList rest5()
+	ParaList rest5(ParaList in)
 	{
+		ParaList out;
 		if (cur.type == OPlus)
 		{
+			ParaList inrest5;
 			con.info<<"rest5 --> +term rest5"<<endl;
 			expect(OPlus);
-			term();
-			rest5();
+			ParaList outterm=term();
+			inrest5.place = newtemp();
+			//emit(¡® + , ¡¯ rest5.in ¡®, ¡¯ term.place ¡®, ¡¯ rest51.in)
+			ParaList outrest5=rest5(inrest5);
+			out.place = outrest5.place;
 		}
 		else if (cur.type == OMinus)
 		{
-			con.info<<"rest5 --> -term rest5"<<endl;
+			ParaList inrest5;
+			con.info << "rest5 --> -term rest5" << endl;
 			expect(OMinus);
-			term();
-			rest5();
+			ParaList outterm = term();
+			inrest5.place = newtemp();
+			//emit(¡® - , ¡¯ rest5.in ¡®, ¡¯ term.place ¡®, ¡¯ rest51.in)
+			ParaList outrest5 = rest5(inrest5);
+			out.place = outrest5.place;
 		}
 		else
 		{
 			con.info<<"rest5 --> e"<<endl;
-			return;
+			out.place = in.place;
 		}
+		return out;
 	}
 	ParaList term()
 	{
+		ParaList out,inrest6;
 		con.info<<"term --> unary rest6"<<endl;
-		unary();
-		rest6();
+		ParaList outunary=unary();
+		inrest6.place = outunary.place;
+		ParaList outrest6=rest6(inrest6);
+		out.place = outrest6.place;
+		return out;
 	}
-	ParaList rest6()
+	ParaList rest6(ParaList in)
 	{
+		ParaList out;
 		if (cur.type == OMul)
 		{
+			ParaList inrest6;
 			con.info<<"rest6 --> *unary rest6"<<endl;
 			expect(OMul);
-			unary();
-			rest6();
+			ParaList outunary=unary();
+			inrest6.place = newtemp();
+			//emit(¡®*, ¡¯ rest6.in ¡®, ¡¯ unary.place ¡®, ¡¯ rest61.in)
+			ParaList outrest6=rest6(inrest6);
+			out.place = outrest6.place;
 		}
 		else if (cur.type == ODiv)
 		{
+			ParaList inrest6;
 			con.info<<"rest6 --> /unary rest6"<<endl;
 			expect(ODiv);
-			unary();
-			rest6();
+			ParaList outunary = unary();
+			inrest6.place = newtemp();
+			//emit(¡®/, ¡¯ rest6.in ¡®, ¡¯ unary.place ¡®, ¡¯ rest61.in)
+			ParaList outrest6 = rest6(inrest6);
+			out.place = outrest6.place;
 		}
 		else
 		{
 			con.info<<"rest6 --> e"<<endl;
-			return;
+			out.place = in.place;
 		}
+		return out;
 	}
 	ParaList unary()
 	{
+		ParaList out;
 		con.info<<"unary --> factor"<<endl;
-		factor();
+		ParaList outfactor=factor();
+		out.place = outfactor.place;
+		return out;
 	}
 	ParaList factor()
 	{
+		ParaList out;
 		if (cur.type == OLPara)
 		{
 			con.info<<"factor --> (expr)"<<endl;
 			expect(OLPara);
-			expr();
+			ParaList outexpr=expr();
 			expect(ORPara);
+			out.place = outexpr.place;
 		}
 		else if (cur.type == Identifier)
 		{
 			con.info<<"factor --> loc"<<endl;
-			loc();
+			ParaList outloc=loc();
+			if (outloc.offset == -1)
+			{
+				out.place = outloc.place;
+			}
+			else
+			{
+				out.place = newtemp();
+				//emit(¡®=[],¡¯ loc.place ¡®[¡¯ loc.offset ¡®]¡¯ ¡®, -,¡¯ factor.place );
+			}
 		}
 		else if (cur.type == CInt)
 		{
 			con.info<<"factor --> num"<<endl;
 			expect(CInt);
+			out.place = *(int*)pre.val;
 		}
 		else
 		{
 			unexpectSolve();
 		}
+		return out;
 	}
 private:
 	int nextquad() { return 0; }
 	vector<int> makelist() { return vector<int>(); }
 	vector<int> makelist(int n) { return vector<int>(1,n); }
+	int newtemp() { return 0; }
 	void expect(WordType type)
 	{
 		if (cur.type != type)
