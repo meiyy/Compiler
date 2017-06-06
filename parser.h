@@ -84,6 +84,8 @@ public:
 		inrest0.nextlist = outstmt.nextlist;
 		ParaList outrest0=rest0(inrest0);
 		out.nextlist = outrest0.nextlist;
+		emit("nop", "-", "-", "-");
+		backpatch(out.nextlist, nextquad() - 1);
 	}
 	ParaList rest0(ParaList in)
 	{
@@ -188,9 +190,7 @@ public:
 		if (cur.type == OLBrack)
 		{
 			con.info<<"loc --> elist]"<<endl;
-			cur = lex.getWord();
 			ParaList outelist=elist();
-			expect(ORBrack);
 			out.place = newtemp();
 			emit("-",ToString()(outelist.array),"C",ToString()(out.place));
 			out.offset = newtemp();
@@ -208,8 +208,9 @@ public:
 	{
 		ParaList out,inrest;
 		con.info<<"elist --> id[expr rest1"<<endl;
-		ParaList outexpr=expr();
 		inrest.array = pre.raw;
+		expect(OLBrack);
+		ParaList outexpr=expr();
 		inrest.ndim = 1;
 		inrest.place = outexpr.place;
 		ParaList outrest1=rest1(inrest);
@@ -220,8 +221,9 @@ public:
 	}
 	ParaList rest1(ParaList in)
 	{
+		expect(ORBrack);
 		ParaList out;
-		if (cur.type != ORBrace)
+		if (cur.type != OLBrack)
 		{
 			con.info<<"rest1 --> e"<<endl;
 			out.array = in.array;
@@ -232,11 +234,10 @@ public:
 		{
 			ParaList inrest1;
 			con.info<<"rest1 --> ][expr rest1"<<endl;
-			expect(ORBrack);
 			expect(OLBrack);
 			ParaList outexpr=expr();
 			string t = newtemp();
-			int m = inrest1.ndim + 1;
+			int m = in.ndim + 1;
 			emit("*",ToString()(in.place), ToString()(limit(in.array, m)), ToString()(t));
 			emit("+",ToString()(t) , ToString()(outexpr.place ), ToString()(t));
 			inrest1.array = in.array;
@@ -291,7 +292,7 @@ public:
 		ParaList outexpr2 = expr();
 		out.truelist = makelist(nextquad());
 		out.falselist = makelist(nextquad() + 1);
-		emit("j"+ outrelop.op , ToString()(outexpr1.place), ToString()(outexpr1.place), "0");
+		emit("j"+ outrelop.op , ToString()(outexpr1.place), ToString()(outexpr2.place), "0");
 		emit("j", "-", "-", "0");
 		return out;
 	}
@@ -462,9 +463,9 @@ public:
 		return out;
 	}
 private:
-	int limit(string arrayName, int ndim)
+	string limit(string arrayName, int ndim)
 	{
-		return ndim;
+		return "D"+ToString()(ndim);
 	}
 	void backpatch(vector<int> nextlist, int quadnum)
 	{
@@ -513,4 +514,18 @@ private:
 		cur = lex.getWord();
 	}
 };
+class B
+{
 
+};
+
+class B1:B
+{
+
+};
+
+template<class T>
+class A
+{
+
+};

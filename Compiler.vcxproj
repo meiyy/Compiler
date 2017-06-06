@@ -141,7 +141,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="conshow.h" />
-    <ClInclude Include="dfa.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="reader.h" />
     <ClInclude Include="word.h" />

@@ -1,5 +1,12 @@
-a=3*2+5;
-if(a>3)
-	b=3;
+name[11][22][33]=44;
+while(b>222)
+	if(b>2)
+		c=c+1;
+	else
+		while(c>2)
+			c=c-1;
+if(c>2)
+	d=d+1;
 else
-	b=a+6;
+	c=c-1;
+	

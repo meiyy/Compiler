@@ -20,9 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dfa.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="reader.h">
       <Filter>头文件</Filter>
     </ClInclude>
