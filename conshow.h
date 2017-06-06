@@ -16,6 +16,7 @@ class Output
 		Myostream(ostream& out,string prefix):out(out),prefix(prefix)
 		{
 		}
+
 		template<class T>
 		ostream& operator<<(T something)
 		{

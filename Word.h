@@ -141,7 +141,7 @@ public:
 	{
 		raw = a.raw;
 		type = a.type;
-		if (type == CInt)val = new int(*(int*)(a.val));
+		if (type == CInt)val = new int(*((int*)(a.val)));
 		else if (type == CFloat)val = new double(*(double*)(a.val));
 		else if (type == CCharacter)val = new char(*(char*)(a.val));
 		else if (type == CString)val = new string(*(string*)(a.val));
@@ -158,11 +158,19 @@ public:
 	{
 		raw = a.raw;
 		type = a.type;
-		if (type == CInt)val = new int(*(int*)(a.val));
+		if (type == CInt)val = new int(*((int*)(a.val)));
 		else if (type == CFloat)val = new double(*(double*)(a.val));
 		else if (type == CCharacter)val = new char(*(char*)(a.val));
 		else if (type == CString)val = new string(*(string*)(a.val));
 		else val = nullptr;
+		return *this;
+	}
+	Word& operator=(Word&& a)
+	{
+		raw = a.raw;
+		type = a.type;
+		val = a.val;
+		a.val = nullptr;
 		return *this;
 	}
 	Word(string raw, WordType type) :raw(raw), type(type), val(nullptr){}

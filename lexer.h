@@ -471,7 +471,6 @@ private:
 		}
 		else if (isNDigit(rd.cur()))
 		{
-			rd.next();
 			long long val1 = 0;
 			int exp = 0;
 			while (isDigit(rd.cur()))

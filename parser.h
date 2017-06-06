@@ -4,9 +4,33 @@
 #include "word.h"
 #include<tuple>
 #include<vector>
+#include<sstream>
 typedef int PlaceType;
 class Parser
 {
+	struct ToInt
+	{
+		int operator()(int num)
+		{
+			return num;
+		}
+		int operator()(string str)
+		{
+			int b;
+			stringstream(str) >> b;
+			return b;
+		}
+	};
+	struct ToString
+	{
+		template<class T>
+		string operator()(T something)
+		{
+			ostringstream str;
+			str << something;
+			return str.str();
+		}
+	};
 	struct ParaList
 	{
 		vector<int> nextlist;
@@ -14,11 +38,24 @@ class Parser
 		vector<int>  truelist;
 		string op;
 		int quad;
-		int offset;
-		int place;
-		int array;
+		string offset;
+		string place;
+		string array;
 		int ndim;
 	};
+	struct Quad
+	{
+		Quad() 
+			:op(),arg1(),arg2(),ret(){}
+		Quad(string op,string arg1,string arg2,string ret)
+			:op(op),arg1(arg1),arg2(arg2),ret(ret){}
+		string op;
+		string arg1;
+		string arg2;
+		string ret;
+	};
+	int lastPos = 0;
+	vector<Quad> quads;
 public:
 	Lexer &lex;
 	Output con;
@@ -31,6 +68,13 @@ public:
 		/*while(!cur.isEOF())
 			stmt();*/
 		stmts();
+		int cnt = 0;
+		for (auto i : quads)
+		{
+			con.code <<cnt<<"#\t"<< i.op << "\t," << i.arg1 << "\t," << i.arg2 << "\t," << i.ret << endl;
+			cnt++;
+		}
+		
 	}
 	void stmts()
 	{
@@ -50,7 +94,7 @@ public:
 			con.info<<"rest0 --> m stmt rest0"<<endl;
 			ParaList outm=m();
 			ParaList outstmt=stmt();
-			//{backpatch(in.nextlist, outm.quad);
+			backpatch(in.nextlist, outm.quad);
 			inrest01.nextlist = outstmt.nextlist;
 			ParaList outrest01=rest0(inrest01);
 			out.nextlist = outrest01.nextlist;
@@ -74,7 +118,7 @@ public:
 		ParaList out;
 		con.info<<"n --> e"<<endl;
 		out.nextlist = makelist(nextquad());
-		//con.code << "j,-,-,0" << endl;
+		emit("j", "-", "-", "0");
 		return out;
 	}
 	ParaList stmt()
@@ -87,13 +131,13 @@ public:
 			expect(OEqu);
 			ParaList outexpr=expr();
 			expect(OSemi);
-			if (outloc.offset == -1)
+			if (outloc.offset == "")
 			{
-				//con.code << "=," << outexpr.place << ",-," << outloc.place << endl;
+				emit("=", ToString()(outexpr.place), "-", ToString()(outloc.place));
 			}
 			else
 			{
-				//con.code << "[]=" << outexpr.place << ",-," << outloc.place << "[" << outloc.offset << "]" << endl;
+				emit("[]=", ToString()(outexpr.place), "-", ToString()(outloc.place)+"["+ ToString()(outloc.offset)+"]");
 			}
 			out.nextlist = makelist();
 		}
@@ -110,8 +154,8 @@ public:
 			expect(KElse);
 			ParaList outm2 = m();
 			ParaList outstmt2=stmt();
-			//backpatch(outrel.truelist, outm1.quad);
-			//backpatch(outrel.falselist, outm2.quad);
+			backpatch(outrel.truelist, outm1.quad);
+			backpatch(outrel.falselist, outm2.quad);
 			out.nextlist = outstmt1.nextlist;
 			out.nextlist.insert(out.nextlist.end(), outn.nextlist.begin(), outn.nextlist.end());
 			out.nextlist.insert(out.nextlist.end(), outstmt2.nextlist.begin(), outstmt2.nextlist.end());
@@ -126,10 +170,10 @@ public:
 			expect(ORPara);
 			ParaList outm2=m();
 			ParaList outstmt=stmt();
-			//backpatch(outstmt.nextlist, outm1.quad);
-			//backpatch(outrel.truelist, outm2.quad);
+			backpatch(outstmt.nextlist, outm1.quad);
+			backpatch(outrel.truelist, outm2.quad);
 			out.nextlist = outrel.falselist;
-			//emit(¡®j, -, -, ¡¯ m1.quad);
+			emit("j","-","-",ToString()(outm1.quad));
 		}
 		else
 		{
@@ -148,14 +192,14 @@ public:
 			ParaList outelist=elist();
 			expect(ORBrack);
 			out.place = newtemp();
-			//emit(¡® - , ¡¯ outelist.arry ¡®, ¡¯ C ¡®, ¡¯ out.place);
+			emit("-",ToString()(outelist.array),"C",ToString()(out.place));
 			out.offset = newtemp();
-			//emit(¡®*, ¡¯ w ¡®, ¡¯ outelist.place ¡®, ¡¯ out.offset);
+			emit("*", "w", ToString()(outelist.place),ToString()(out.offset));
 		}
 		else
 		{
-			//out.place = pre.place;
-			out.offset = -1;
+			out.place = pre.raw;
+			out.offset = "";
 			con.info<<"loc --> id"<<endl;
 		}
 		return out;
@@ -165,7 +209,7 @@ public:
 		ParaList out,inrest;
 		con.info<<"elist --> id[expr rest1"<<endl;
 		ParaList outexpr=expr();
-		//inrest.array = pre.place;
+		inrest.array = pre.raw;
 		inrest.ndim = 1;
 		inrest.place = outexpr.place;
 		ParaList outrest1=rest1(inrest);
@@ -191,10 +235,10 @@ public:
 			expect(ORBrack);
 			expect(OLBrack);
 			ParaList outexpr=expr();
-			int t = newtemp();
+			string t = newtemp();
 			int m = inrest1.ndim + 1;
-			//emit(¡®*, ¡¯ rest1.in_place ¡®, ¡¯ limit(rest1.in_array, m) ¡®, ¡¯ t);
-			//emit(¡®+,¡¯ t ¡®,¡¯ expr.place ¡®,¡¯ t);
+			emit("*",ToString()(in.place), ToString()(limit(in.array, m)), ToString()(t));
+			emit("+",ToString()(t) , ToString()(outexpr.place ), ToString()(t));
 			inrest1.array = in.array;
 			inrest1.ndim = m;
 			inrest1.place = t;
@@ -247,8 +291,8 @@ public:
 		ParaList outexpr2 = expr();
 		out.truelist = makelist(nextquad());
 		out.falselist = makelist(nextquad() + 1);
-		//emit(¡®j¡¯ relop.op ¡®, ¡¯ expr1.place ¡®, ¡¯ expr2.place ¡®, ¡¯ ¡®0¡¯);
-		//emit( ¡®j, -, -, 0¡¯ )}
+		emit("j"+ outrelop.op , ToString()(outexpr1.place), ToString()(outexpr1.place), "0");
+		emit("j", "-", "-", "0");
 		return out;
 	}
 	ParaList relop()
@@ -280,11 +324,11 @@ public:
 		}
 		else
 		{
-			expr();
+			ParaList outexpr=expr();
 			out.truelist = makelist(nextquad());
 			out.falselist = makelist(nextquad() + 1);
-			//emit(¡®jnz, ¡¯ expr.place ¡®, -, ¡¯ 0);
-			//emit(¡®j, -, -, 0¡¯);}
+			emit("jnz", ToString()(outexpr.place), "-", "0");
+			emit("j", "-", "-", "0");
 		}
 		return out;
 	}
@@ -308,7 +352,7 @@ public:
 			expect(OPlus);
 			ParaList outterm=term();
 			inrest5.place = newtemp();
-			//emit(¡® + , ¡¯ rest5.in ¡®, ¡¯ term.place ¡®, ¡¯ rest51.in)
+			emit("+", ToString()(in.place), ToString()(outterm.place), ToString()(inrest5.place));
 			ParaList outrest5=rest5(inrest5);
 			out.place = outrest5.place;
 		}
@@ -319,7 +363,7 @@ public:
 			expect(OMinus);
 			ParaList outterm = term();
 			inrest5.place = newtemp();
-			//emit(¡® - , ¡¯ rest5.in ¡®, ¡¯ term.place ¡®, ¡¯ rest51.in)
+			emit("-", ToString()(in.place), ToString()(outterm.place), ToString()(inrest5.place));
 			ParaList outrest5 = rest5(inrest5);
 			out.place = outrest5.place;
 		}
@@ -349,8 +393,8 @@ public:
 			con.info<<"rest6 --> *unary rest6"<<endl;
 			expect(OMul);
 			ParaList outunary=unary();
-			inrest6.place = newtemp();
-			//emit(¡®*, ¡¯ rest6.in ¡®, ¡¯ unary.place ¡®, ¡¯ rest61.in)
+			inrest6.place = ToString()(newtemp());
+			emit("*", ToString()(in.place), ToString()(outunary.place), ToString()(inrest6.place));
 			ParaList outrest6=rest6(inrest6);
 			out.place = outrest6.place;
 		}
@@ -361,7 +405,7 @@ public:
 			expect(ODiv);
 			ParaList outunary = unary();
 			inrest6.place = newtemp();
-			//emit(¡®/, ¡¯ rest6.in ¡®, ¡¯ unary.place ¡®, ¡¯ rest61.in)
+			emit("/", ToString()(in.place), ToString()(outunary.place), ToString()(inrest6.place));
 			ParaList outrest6 = rest6(inrest6);
 			out.place = outrest6.place;
 		}
@@ -395,21 +439,21 @@ public:
 		{
 			con.info<<"factor --> loc"<<endl;
 			ParaList outloc=loc();
-			if (outloc.offset == -1)
+			if (outloc.offset == "")
 			{
 				out.place = outloc.place;
 			}
 			else
 			{
 				out.place = newtemp();
-				//emit(¡®=[],¡¯ loc.place ¡®[¡¯ loc.offset ¡®]¡¯ ¡®, -,¡¯ factor.place );
+				emit("=[]",ToString()(outloc.place)+"["+ToString()( outloc.offset)+"]", "-",ToString()(out.place ));
 			}
 		}
 		else if (cur.type == CInt)
 		{
 			con.info<<"factor --> num"<<endl;
 			expect(CInt);
-			out.place = *(int*)pre.val;
+			out.place = ToString()(*((int*)pre.val));
 		}
 		else
 		{
@@ -418,10 +462,37 @@ public:
 		return out;
 	}
 private:
-	int nextquad() { return 0; }
+	int limit(string arrayName, int ndim)
+	{
+		return ndim;
+	}
+	void backpatch(vector<int> nextlist, int quadnum)
+	{
+		for (auto i : nextlist)
+		{
+			quads[i].ret = ToString()(quadnum);
+		}
+	}
+	int nextquad() 
+	{
+		return lastPos;
+	}
+	void emit(string op,string arg1,string arg2,string ret)
+	{
+		while (lastPos >= (int)quads.size())
+		{
+			quads.push_back(Quad());
+		}
+		quads[lastPos] = Quad(op, arg1, arg2, ret);
+		lastPos++;
+	}
 	vector<int> makelist() { return vector<int>(); }
 	vector<int> makelist(int n) { return vector<int>(1,n); }
-	int newtemp() { return 0; }
+	string newtemp()
+	{
+		static int cnt = 0;
+		return "X"+ToString()(cnt++);
+	}
 	void expect(WordType type)
 	{
 		if (cur.type != type)
