@@ -44,6 +44,5 @@
     <None Include=".gitignore" />
     <None Include="README.md" />
     <None Include="HELLO" />
-    <None Include="DOCUMENT.md" />
   </ItemGroup>
 </Project>
