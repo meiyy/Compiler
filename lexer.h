@@ -404,7 +404,7 @@ private:
 				throw exception(tmp.c_str());
 			}
 			rd.next();
-			return Word(rd.pop(), CCharacter, (char)val);
+			return Word(rd.pop(), CCharacter, (char)val, rd.getLineNum());
 		}
 		else if (rd.cur() == '\"')
 		{
@@ -415,7 +415,7 @@ private:
 			}
 			rd.next();
 			string val = rd.pop();
-			return Word(val, CString, val);
+			return Word(val, CString, val, rd.getLineNum());
 		}
 		else if (rd.cur() == '#')
 		{
@@ -428,12 +428,12 @@ private:
 				}
 				rd.next();
 			}
-			return Word(rd.pop(), Precompile);
+			return Word(rd.pop(), Precompile, rd.getLineNum());
 		}
 		else if (isFID(rd.cur()))
 		{
 			string tmp = getID();
-			return Word(tmp, (WordType)ck.Check(tmp));
+			return Word(tmp, (WordType)ck.Check(tmp), rd.getLineNum());
 		}
 		else if (rd.cur() == '0')
 		{
@@ -456,7 +456,7 @@ private:
 				{
 					throw exception("The constant is too large for int type.");
 				}
-				return Word(rd.pop(), CInt, (int)val);
+				return Word(rd.pop(), CInt, (int)val, rd.getLineNum());
 			}
 			else
 			{
@@ -466,7 +466,7 @@ private:
 					val = val * 8 + rd.cur() - '0';
 					rd.next();
 				}
-				return Word(rd.pop(), CInt, val);
+				return Word(rd.pop(), CInt, val, rd.getLineNum());
 			}
 		}
 		else if (isNDigit(rd.cur()))
@@ -528,7 +528,7 @@ private:
 						throw exception(tmp.c_str());
 					}
 				}
-				return Word(rd.pop(), CFloat, (val1 + val2)*std::exp(exp));
+				return Word(rd.pop(), CFloat, (val1 + val2)*std::exp(exp), rd.getLineNum());
 			}
 			else if (rd.cur() == 'e' || rd.cur() == 'E')
 			{
@@ -569,7 +569,7 @@ private:
 					string tmp = string("Unexpected character: ") + rd.cur() + " .";
 					throw exception(tmp.c_str());
 				}
-				return Word(rd.pop(), CFloat, val1*std::exp(exp));
+				return Word(rd.pop(), CFloat, val1*std::exp(exp), rd.getLineNum());
 			}
 			else
 			{
@@ -577,7 +577,7 @@ private:
 				{
 					throw exception("The constant is too large for int type.");
 				}
-				return Word(rd.pop(), CInt, (int)val1);
+				return Word(rd.pop(), CInt, (int)val1,rd.getLineNum());
 			}
 		}
 		else if (rd.cur() == '.')
@@ -636,18 +636,18 @@ private:
 						throw exception(tmp.c_str());
 					}
 				}
-				return Word(rd.pop(), CFloat, val2*std::exp(exp));
+				return Word(rd.pop(), CFloat, val2*std::exp(exp), rd.getLineNum());
 			}
 			else
 			{
-				return Word(rd.pop(), OPoint);
+				return Word(rd.pop(), OPoint, rd.getLineNum());
 			}
 		}
 		else
 		{
 			WordType type;
 			string res = getOperator(type);
-			return Word(res, type);
+			return Word(res, type, rd.getLineNum());
 		}
 	}
 	void deal()
@@ -714,19 +714,19 @@ public:
 				rd.pop();
 				if (rd.cur() == EOF)
 				{
-					return Word("EOF", Undefined);
+					return Word("EOF", Undefined, rd.getLineNum());
 				}
 				ret = _getWord();
 			}
 			catch(exception &e)
 			{
-				con.error << e.what() << endl;
+				con.error << "line "<<rd.getLineNum()<<": "<<e.what() << endl;
 				deal();
 				return getWord();
 			}
 			return ret;
 		}
-		return Word("EOF",Undefined);
+		return Word("EOF",Undefined, rd.getLineNum());
 	}
 	~Lexer()
 	{

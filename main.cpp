@@ -1,9 +1,7 @@
-#include"DFA.h"
 #include"reader.h"
 #include"lexer.h"
 #include"conshow.h"
 #include"parser.h"
-#include<tuple>
 
 using namespace std;
 
@@ -39,5 +37,6 @@ int main(int argc, char *argv[])
 	}
 	delete reader;
 	reader = nullptr;
+	system("pause");
 	return 0;
 }

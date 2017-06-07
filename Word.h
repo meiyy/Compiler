@@ -136,9 +136,11 @@ public:
 	string raw;
 	WordType type;
 	void *val;
+	int lineNum;
 	Word() { val = nullptr; }
 	Word(Word& a)
 	{
+		lineNum = a.lineNum;
 		raw = a.raw;
 		type = a.type;
 		if (type == CInt)val = new int(*((int*)(a.val)));
@@ -149,6 +151,7 @@ public:
 	}
 	Word(Word&& a)
 	{
+		lineNum = a.lineNum;
 		raw = a.raw;
 		type = a.type;
 		val = a.val;
@@ -156,6 +159,7 @@ public:
 	}
 	Word& operator=(Word& a)
 	{
+		lineNum = a.lineNum;
 		raw = a.raw;
 		type = a.type;
 		if (type == CInt)val = new int(*((int*)(a.val)));
@@ -167,17 +171,18 @@ public:
 	}
 	Word& operator=(Word&& a)
 	{
+		lineNum = a.lineNum;
 		raw = a.raw;
 		type = a.type;
 		val = a.val;
 		a.val = nullptr;
 		return *this;
 	}
-	Word(string raw, WordType type) :raw(raw), type(type), val(nullptr){}
-	Word(string raw, WordType type, int val) :raw(raw), type(type) { this->val = new int(val); }
-	Word(string raw, WordType type, char val) :raw(raw), type(type) { this->val = new char(val); }
-	Word(string raw, WordType type, double val) :raw(raw), type(type) { this->val = new double(val); }
-	Word(string raw, WordType type, string val) :raw(raw), type(type) { this->val = new string(val); }
+	Word(string raw, WordType type, int lineNum) :lineNum(lineNum), raw(raw), type(type), val(nullptr){}
+	Word(string raw, WordType type, int val, int lineNum) :lineNum(lineNum), raw(raw), type(type) { this->val = new int(val); }
+	Word(string raw, WordType type, char val, int lineNum) :lineNum(lineNum), raw(raw), type(type) { this->val = new char(val); }
+	Word(string raw, WordType type, double val, int lineNum) :lineNum(lineNum), raw(raw), type(type) { this->val = new double(val); }
+	Word(string raw, WordType type, string val, int lineNum) :lineNum(lineNum), raw(raw), type(type) { this->val = new string(val); }
 
 	
 	bool isEOF()

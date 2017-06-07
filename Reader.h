@@ -17,6 +17,7 @@ private:
 	int pos;
 	int sz;
 	int start;
+	int lineNum;
 public:
 	Reader(const char *path)
 	{
@@ -27,6 +28,7 @@ public:
 			throw exception(res.c_str());
 		}
 		fseek(file, 0, SEEK_END);
+		lineNum = 0;
 		sz = ftell(file);
 		rewind(file);
 
@@ -50,10 +52,19 @@ public:
 
 	void next()
 	{
+		if (cur() == '\n')
+		{
+			lineNum++;
+		}
 		if (pos < sz)
 			pos++;
 		else
 			throw Endoffile("Reach the end of input file.");
+	}
+
+	int getLineNum()
+	{
+		return lineNum;
 	}
 
 	char cur()
