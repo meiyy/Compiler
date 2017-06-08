@@ -288,17 +288,7 @@ private:
 			}
 			return rd.pop();
 		}
-		else if (rd.cur() == '/')
-		{
-			rd.next();
-			type = ODiv;
-			if (rd.cur() == '=')
-			{
-				type = ODivEqu;
-				rd.next();
-			}
-			return rd.pop();
-		}
+		
 		else if (rd.cur() == '%')
 		{
 			rd.next();
@@ -385,7 +375,51 @@ private:
 	}
 	Word _getWord()
 	{
-		if (rd.cur() == '\'')
+		if (rd.cur() == '/')
+		{
+			rd.next();
+			if (rd.cur() == '*')
+			{
+				Word ret = Word("Comment", Undefined, rd.getLineNum());
+				while (true)
+				{
+					while (rd.cur() != '*')
+					{
+						if (rd.cur() == EOF)
+						{
+							rd.pop();
+							return ret;
+						}
+						rd.next();
+					}
+					rd.next();
+					if (rd.cur() == EOF)
+					{
+						rd.pop();
+						return ret;
+					}
+					if (rd.cur() == '/')
+					{
+						rd.pop();
+						rd.next();
+						return ret;
+					}
+				}
+			}
+			else
+			{
+				Word ret;
+				ret.type = ODiv;
+				if (rd.cur() == '=')
+				{
+					ret.type = ODivEqu;
+					rd.next();
+				}
+				ret.raw = rd.pop();
+				return ret;
+			}
+		}
+		else if (rd.cur() == '\'')
 		{
 			rd.next();
 			int val;
@@ -706,17 +740,20 @@ public:
 		{
 			try {
 				escapeLine();
-				while (isBlank(rd.cur()))
+				do
 				{
-					rd.next();
-					escapeLine();
-				}
-				rd.pop();
-				if (rd.cur() == EOF)
-				{
-					return Word("EOF", Undefined, rd.getLineNum());
-				}
-				ret = _getWord();
+					while (isBlank(rd.cur()))
+					{
+						rd.next();
+						escapeLine();
+					}
+					rd.pop();
+					if (rd.cur() == EOF)
+					{
+						return Word("EOF", Undefined, rd.getLineNum());
+					}
+					ret = _getWord();
+				} while (ret.type==Undefined && ret.raw == "Comment");
 			}
 			catch(exception &e)
 			{

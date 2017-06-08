@@ -28,7 +28,7 @@ public:
 			throw exception(res.c_str());
 		}
 		fseek(file, 0, SEEK_END);
-		lineNum = 0;
+		lineNum = 1;
 		sz = ftell(file);
 		rewind(file);
 

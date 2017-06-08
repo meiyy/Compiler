@@ -40,6 +40,5 @@
     <None Include="LICENSE" />
     <None Include=".gitignore" />
     <None Include="README.md" />
-    <None Include="HELLO" />
   </ItemGroup>
 </Project>

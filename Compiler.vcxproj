@@ -148,7 +148,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
-    <None Include="HELLO" />
     <None Include="LICENSE" />
     <None Include="README.md" />
   </ItemGroup>

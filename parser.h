@@ -33,15 +33,15 @@ class Parser
 	};
 	struct ParaList
 	{
-		int nextlist;
-		int falselist;
-		int truelist;
-		string op;
-		int quad;
-		string offset;
-		string place;
-		string array;
-		int ndim;
+		int nextlist=-1;
+		int falselist=-1;
+		int truelist=-1;
+		string op="Null";
+		int quad=-1;
+		string offset="Null";
+		string place="Null";
+		string array="Null";
+		int ndim=-1;
 	};
 	struct Quad
 	{
@@ -67,16 +67,19 @@ public:
 		cur = lex.getWord();
 		/*while(!cur.isEOF())
 		stmt();*/
-		stmts();
+
+		ParaList out = stmts();
+		emit("nop", "-", "-", "-");
+		if(out.nextlist!=-1)
+			backpatch(out.nextlist, nextquad() - 1);
 		int cnt = 0;
 		for (auto i : quads)
 		{
 			con.code << cnt << "#\t" << i.op << "\t," << i.arg1 << "\t," << i.arg2 << "\t," << i.ret << endl;
 			cnt++;
 		}
-
 	}
-	void stmts()
+	ParaList stmts()
 	{
 		ParaList out, inrest0;
 		con.info << "stmts --> stmt rest0" << endl;
@@ -84,8 +87,7 @@ public:
 		inrest0.nextlist = outstmt.nextlist;
 		ParaList outrest0 = rest0(inrest0);
 		out.nextlist = outrest0.nextlist;
-		emit("nop", "-", "-", "-");
-		backpatch(out.nextlist, nextquad() - 1);
+		return out;
 	}
 	ParaList rest0(ParaList in)
 	{
@@ -120,7 +122,7 @@ public:
 		ParaList out;
 		con.info << "n --> e" << endl;
 		out.nextlist = nextquad();
-		emit("j", "-", "-", "0");
+		emit("j", "-", "-", "-1");
 		return out;
 	}
 	ParaList stmtBlock()
@@ -129,11 +131,14 @@ public:
 		if (cur.type == OLBrace)
 		{
 			expect(OLBrace);
-			
+			ParaList outstmts=stmts();
+			expect(ORBrace);
+			out.nextlist = outstmts.nextlist;
 		}
 		else
 		{
-
+			ParaList outstmt=stmt();
+			out.nextlist = outstmt.nextlist;
 		}
 		return out;
 	}
@@ -155,7 +160,7 @@ public:
 			{
 				emit("[]=", ToString()(outexpr.place), "-", ToString()(outloc.place) + "[" + ToString()(outloc.offset) + "]");
 			}
-			out.nextlist = 0;
+			out.nextlist = -1;
 		}
 		else if (cur.type == KIf)
 		{
@@ -165,14 +170,14 @@ public:
 			ParaList outrel = rel();
 			expect(ORPara);
 			ParaList outm1 = m();
-			ParaList outstmt1 = stmt();
+			ParaList outstmt1 = stmtBlock();
 			if (cur.type == KElse)
 			{
 				ParaList outn = n();
 				con.info << "stmt --> if(rel)m stmt else m stmt" << endl;
 				expect(KElse);
 				ParaList outm2 = m();
-				ParaList outstmt2 = stmt();
+				ParaList outstmt2 = stmtBlock();
 				backpatch(outrel.truelist, outm1.quad);
 				backpatch(outrel.falselist, outm2.quad);
 				out.nextlist = outstmt1.nextlist;
@@ -197,7 +202,7 @@ public:
 			ParaList outrel = rel();
 			expect(ORPara);
 			ParaList outm2 = m();
-			ParaList outstmt = stmt();
+			ParaList outstmt = stmtBlock();
 			backpatch(outstmt.nextlist, outm1.quad);
 			backpatch(outrel.truelist, outm2.quad);
 			out.nextlist = outrel.falselist;
@@ -318,8 +323,8 @@ public:
 		ParaList outexpr2 = expr();
 		out.truelist = nextquad();
 		out.falselist = nextquad() + 1;
-		emit("j" + outrelop.op, ToString()(outexpr1.place), ToString()(outexpr2.place), "0");
-		emit("j", "-", "-", "0");
+		emit("j" + outrelop.op, ToString()(outexpr1.place), ToString()(outexpr2.place), "-1");
+		emit("j", "-", "-", "-1");
 		return out;
 	}
 	ParaList relop()
@@ -354,8 +359,8 @@ public:
 			ParaList outexpr = expr();
 			out.truelist = nextquad();
 			out.falselist = nextquad() + 1;
-			emit("jnz", ToString()(outexpr.place), "-", "0");
-			emit("j", "-", "-", "0");
+			emit("jnz", ToString()(outexpr.place), "-", "-1");
+			emit("j", "-", "-", "-1");
 		}
 		return out;
 	}
@@ -496,7 +501,7 @@ private:
 	void backpatch(int nextlist, int quadnum)
 	{
 		int pos = nextlist;
-		while (pos)
+		while (pos!=-1)
 		{
 			int tmp = ToInt()(quads[pos].ret);
 			quads[pos].ret = ToString()(quadnum);
@@ -518,10 +523,10 @@ private:
 	}
 	void mergeList(int &to, int from)
 	{
-		if (from == 0)
+		if (from == -1)
 			return;
 		int pos = from;
-		while (ToInt()(quads[pos].ret))
+		while (ToInt()(quads[pos].ret) != -1)
 		{
 			pos = ToInt()(quads[pos].ret);
 		}
