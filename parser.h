@@ -123,6 +123,20 @@ public:
 		emit("j", "-", "-", "0");
 		return out;
 	}
+	ParaList stmtBlock()
+	{
+		ParaList out;
+		if (cur.type == OLBrace)
+		{
+			expect(OLBrace);
+			
+		}
+		else
+		{
+
+		}
+		return out;
+	}
 	ParaList stmt()
 	{
 		ParaList out;
@@ -152,9 +166,9 @@ public:
 			expect(ORPara);
 			ParaList outm1 = m();
 			ParaList outstmt1 = stmt();
-			ParaList outn = n();
 			if (cur.type == KElse)
 			{
+				ParaList outn = n();
 				con.info << "stmt --> if(rel)m stmt else m stmt" << endl;
 				expect(KElse);
 				ParaList outm2 = m();
@@ -170,7 +184,6 @@ public:
 				con.info << "stmt --> if(rel)m stmt" << endl;
 				backpatch(outrel.truelist, outm1.quad);
 				out.nextlist = outstmt1.nextlist;
-				mergeList(out.nextlist, outn.nextlist);
 				mergeList(out.nextlist, outrel.falselist);
 			}
 
